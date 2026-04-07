@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import init_db
-from app.routers import auth, commands, jobs, humanloop, users, brain, websocket
+from app.routers import auth, commands, jobs, humanloop, users, brain, websocket, deployments
 from app.seed import seed
 from app.core.pubsub import listen_and_forward
 
@@ -42,6 +42,7 @@ app.include_router(jobs.router)
 app.include_router(humanloop.router)
 app.include_router(users.router)
 app.include_router(brain.router)
+app.include_router(deployments.router)
 app.include_router(websocket.router)
 
 

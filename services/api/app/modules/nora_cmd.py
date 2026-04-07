@@ -6,7 +6,7 @@ import re
 from typing import Tuple, Optional
 
 
-PILOT_COMMANDS = {"/build", "/status", "/stop", "/deploy", "/tactic", "/help"}
+PILOT_COMMANDS = {"/build", "/status", "/stop", "/deploy", "/tactic", "/publish", "/help"}
 
 CHAT_BUILD_PATTERNS = [
     r"\bbuild\b",

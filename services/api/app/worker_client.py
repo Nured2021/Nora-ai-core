@@ -52,3 +52,19 @@ def dispatch_deploy_job(job_id: str, input_text: str, user_id: int) -> str:
         queue="default",
     )
     return result.id
+
+
+def dispatch_publish_job(
+    deployment_id: str,
+    job_id: str,
+    project_path: str,
+    stack: str,
+    user_id: int,
+) -> str:
+    """Dispatch Phase 4 publish task — copies build to nginx volume and returns public URL."""
+    result = celery_app.send_task(
+        "worker.tasks.deploy.run_publish",
+        args=[deployment_id, job_id, project_path, stack, user_id],
+        queue="default",
+    )
+    return result.id

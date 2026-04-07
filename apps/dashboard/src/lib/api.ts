@@ -117,3 +117,19 @@ export const runTactic = async (tacticId: number) => {
   const res = await api.post(`/api/brain/tactics/${tacticId}/run`)
   return res.data
 }
+
+// Deployments (Phase 4)
+export const getDeployments = async (limit = 50) => {
+  const res = await api.get(`/api/deployments/?limit=${limit}`)
+  return res.data
+}
+
+export const getDeployment = async (deploymentId: string) => {
+  const res = await api.get(`/api/deployments/${deploymentId}`)
+  return res.data
+}
+
+export const publishDeployment = async (jobId: string) => {
+  const res = await api.post('/api/deployments/', { job_id: jobId })
+  return res.data
+}

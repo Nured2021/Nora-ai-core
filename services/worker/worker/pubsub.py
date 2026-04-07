@@ -74,3 +74,17 @@ def publish_preview(job_id: str, preview_url: str, project_path: str, git_commit
         "git_commit": git_commit,
     }
     _redis.publish(WS_CHANNEL, json.dumps(event))
+
+
+def publish_deploy(deployment_id: str, job_id: str, name: str, public_url: str, status: str, error: str = ""):
+    """Broadcast deployment ready/failed event (Phase 4)."""
+    event = {
+        "type": "deploy_ready" if status == "live" else "deploy_failed",
+        "deployment_id": deployment_id,
+        "job_id": job_id,
+        "name": name,
+        "public_url": public_url,
+        "status": status,
+        "error": error,
+    }
+    _redis.publish(WS_CHANNEL, json.dumps(event))

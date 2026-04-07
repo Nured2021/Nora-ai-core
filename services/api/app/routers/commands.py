@@ -99,6 +99,66 @@ async def dispatch_command(
             "message": "Deploy requires HumanLoop approval",
         }
 
+    # /publish {job_id} → Phase 4: publish a completed build to a stable public URL
+    if command == "/publish":
+        target_job_id = job_id_hint or cleaned_input.strip()
+        if not target_job_id:
+            return {"type": "error", "message": "Usage: /publish {job_id}"}
+        target_job = await get_job(db, target_job_id)
+        if not target_job:
+            return {"type": "error", "message": f"Job '{target_job_id}' not found"}
+        if target_job.status != "completed":
+            return {
+                "type": "error",
+                "message": f"Job must be completed before publishing (current: {target_job.status})",
+            }
+        if not target_job.result or not target_job.result.get("project_path"):
+            return {"type": "error", "message": "Job has no built project to deploy"}
+
+        from app.modules.deploy_ops import create_deployment
+        from app.worker_client import dispatch_publish_job
+
+        result = target_job.result
+        deployment_id = f"DEP-{uuid.uuid4().hex[:8].upper()}"
+        name = result.get("plan", {}).get("name", target_job.input_text[:60])
+        stack_list = result.get("plan", {}).get("stack") or []
+        stack = stack_list[0] if stack_list else None
+
+        deployment = await create_deployment(
+            db=db,
+            deployment_id=deployment_id,
+            job_id=target_job_id,
+            user_id=current_user.id,
+            name=name,
+            stack=stack,
+            project_path=result.get("project_path"),
+            files_count=len(result.get("files_created", [])),
+        )
+
+        dispatch_publish_job(
+            deployment_id=deployment_id,
+            job_id=target_job_id,
+            project_path=result.get("project_path", ""),
+            stack=stack or "unknown",
+            user_id=current_user.id,
+        )
+
+        await manager.broadcast(target_job_id, {
+            "type": "deploy_started",
+            "deployment_id": deployment_id,
+            "job_id": target_job_id,
+            "name": name,
+            "status": "deploying",
+            "message": f"Publishing '{name}' — deployment {deployment_id}",
+        })
+
+        return {
+            "type": "deploy_started",
+            "deployment_id": deployment_id,
+            "job_id": target_job_id,
+            "message": f"Deployment {deployment_id} queued — publishing '{name}'",
+        }
+
     # /build or chat build → queue AI build job (Phase 2: NORA-ARCH + NORA-CODE)
     if command in ("/build", "chat"):
         from app.worker_client import dispatch_ai_build_job

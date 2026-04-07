@@ -90,4 +90,25 @@ export interface WsMessage {
   preview_url?: string
   project_path?: string
   git_commit?: string
+  // Phase 4: deployments
+  deployment_id?: string
+  name?: string
+  public_url?: string
+  error?: string
+}
+
+export interface Deployment {
+  id: number
+  deployment_id: string
+  job_id: string
+  user_id: number
+  name: string
+  stack?: string
+  status: 'pending' | 'deploying' | 'live' | 'failed'
+  public_url?: string
+  project_path?: string
+  files_count: number
+  error?: string
+  created_at: string
+  updated_at?: string
 }
