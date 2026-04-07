@@ -19,6 +19,11 @@ import {
   Database,
   Sparkles,
   Globe,
+  Building2,
+  FolderOpen,
+  Shield,
+  BarChart3,
+  HeartPulse,
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import { useRouter } from 'next/navigation'
@@ -42,6 +47,15 @@ const PHASE5_NAV = [
   { label: 'Personality',    href: '/personality',     icon: Sparkles },
   { label: 'Global Network', href: '/global-network',  icon: Globe },
   { label: 'GOD MODE',       href: '/god-mode',        icon: Zap, special: true },
+]
+
+// Phase 6 nav items
+const PHASE6_NAV = [
+  { label: 'Enterprise',     href: '/enterprise',      icon: Building2 },
+  { label: 'Workspaces',     href: '/workspaces',      icon: FolderOpen },
+  { label: 'Approvals',      href: '/approvals-center', icon: Shield },
+  { label: 'System Health',  href: '/system-health',   icon: HeartPulse },
+  { label: 'Analytics',      href: '/analytics',       icon: BarChart3 },
 ]
 
 export function Sidebar() {
@@ -79,7 +93,7 @@ export function Sidebar() {
           <Zap className="w-4 h-4 text-white" />
         </div>
         <span className="text-nora-text font-bold text-lg tracking-wide">NORA</span>
-        <span className="text-xs text-nora-muted ml-auto">v5.0</span>
+        <span className="text-xs text-nora-muted ml-auto">v6.0</span>
       </div>
 
       {/* Navigation */}
@@ -140,6 +154,37 @@ export function Sidebar() {
                 {isGodActive && (
                   <span className="text-xs bg-purple-600 text-white px-1 rounded font-bold">ON</span>
                 )}
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Phase 6 divider */}
+        <div className="px-3 py-1 mb-1 mt-2">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-px bg-nora-border" />
+            <span className="text-xs text-nora-muted whitespace-nowrap">Phase 6</span>
+            <div className="flex-1 h-px bg-nora-border" />
+          </div>
+        </div>
+
+        {/* Phase 6 nav */}
+        <div className="space-y-0.5">
+          {PHASE6_NAV.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + '/')
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                  active
+                    ? 'bg-nora-accent text-white'
+                    : 'text-nora-muted hover:text-nora-text hover:bg-nora-border'
+                )}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
               </Link>
             )
           })}

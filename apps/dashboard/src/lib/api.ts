@@ -202,3 +202,100 @@ export const searchMemory = async (query: string) => {
   const res = await api.post(`/api/phase5/memory/search?query=${encodeURIComponent(query)}`)
   return res.data
 }
+
+// ─── Phase 6 — Organizations ────────────────────────────────────────────────
+
+export const getOrganizations = async () => {
+  const res = await api.get('/api/phase6/organizations')
+  return res.data
+}
+
+export const createOrganization = async (name: string, slug: string, plan = 'free') => {
+  const res = await api.post('/api/phase6/organizations', { name, slug, plan })
+  return res.data
+}
+
+// ─── Phase 6 — Workspaces ───────────────────────────────────────────────────
+
+export const getWorkspaces = async () => {
+  const res = await api.get('/api/phase6/workspaces')
+  return res.data
+}
+
+export const createWorkspace = async (name: string, slug: string, description?: string, template?: string, org_id?: number) => {
+  const res = await api.post('/api/phase6/workspaces', { name, slug, description, template, org_id })
+  return res.data
+}
+
+// ─── Phase 6 — Team ─────────────────────────────────────────────────────────
+
+export const getTeamMembers = async (org_id?: number, workspace_id?: number) => {
+  const params = new URLSearchParams()
+  if (org_id) params.set('org_id', String(org_id))
+  if (workspace_id) params.set('workspace_id', String(workspace_id))
+  const res = await api.get(`/api/phase6/team?${params.toString()}`)
+  return res.data
+}
+
+export const inviteTeamMember = async (username: string, role = 'VIEWER', org_id?: number, workspace_id?: number) => {
+  const res = await api.post('/api/phase6/team/invite', { username, role, org_id, workspace_id })
+  return res.data
+}
+
+// ─── Phase 6 — Audit Log ────────────────────────────────────────────────────
+
+export const getAuditLog = async (limit = 100) => {
+  const res = await api.get(`/api/phase6/audit-log?limit=${limit}`)
+  return res.data
+}
+
+// ─── Phase 6 — Backups ──────────────────────────────────────────────────────
+
+export const getBackups = async () => {
+  const res = await api.get('/api/phase6/backups')
+  return res.data
+}
+
+export const runBackup = async (note?: string) => {
+  const params = note ? `?note=${encodeURIComponent(note)}` : ''
+  const res = await api.post(`/api/phase6/backups/run${params}`)
+  return res.data
+}
+
+export const restoreLatestBackup = async () => {
+  const res = await api.post('/api/phase6/backups/restore')
+  return res.data
+}
+
+// ─── Phase 6 — Environments ─────────────────────────────────────────────────
+
+export const getEnvironments = async () => {
+  const res = await api.get('/api/phase6/environments')
+  return res.data
+}
+
+export const createEnvironment = async (name: string, env_type = 'staging', workspace_id?: number) => {
+  const params = new URLSearchParams({ name, env_type })
+  if (workspace_id) params.set('workspace_id', String(workspace_id))
+  const res = await api.post(`/api/phase6/environments?${params.toString()}`)
+  return res.data
+}
+
+export const promoteEnvironment = async (envId: number, target = 'production', note?: string) => {
+  const res = await api.post(`/api/phase6/environments/${envId}/promote`, { environment_id: envId, target, note })
+  return res.data
+}
+
+// ─── Phase 6 — Health ───────────────────────────────────────────────────────
+
+export const getSystemHealth = async () => {
+  const res = await api.get('/api/phase6/health')
+  return res.data
+}
+
+// ─── Phase 6 — Analytics ────────────────────────────────────────────────────
+
+export const getAnalytics = async () => {
+  const res = await api.get('/api/phase6/analytics')
+  return res.data
+}

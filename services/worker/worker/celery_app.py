@@ -16,6 +16,7 @@ celery_app = Celery(
         "worker.tasks.deploy",
         "worker.tasks.ai_build",
         "worker.tasks.phase5",
+        "worker.tasks.phase6",
     ],
 )
 

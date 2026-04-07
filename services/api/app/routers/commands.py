@@ -345,4 +345,149 @@ async def dispatch_command(
             "message": f"NORA-MEMORY: Found {len(results)} memories matching '{query}'",
         }
 
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /workspace create <name>
+    # ------------------------------------------------------------------ #
+    if command == "/workspace":
+        from app.worker_client import dispatch_phase6_job
+        parts = cleaned_input.split(None, 2)
+        sub = parts[0].lower() if parts else "create"
+        if sub == "create":
+            ws_name = parts[1] if len(parts) > 1 else "workspace-default"
+            job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+            job = Job(job_id=job_id, user_id=current_user.id,
+                      command="/workspace", input_text=body.input_text, status="queued")
+            db.add(job)
+            await db.flush()
+            celery_task_id = dispatch_phase6_job("run_workspace_create", job_id, body.input_text, current_user.id)
+            await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+            await manager.broadcast(job_id, {
+                "type": "job_created", "job_id": job_id,
+                "command": "/workspace", "status": "queued",
+                "message": f"Creating workspace: {ws_name}",
+            })
+            return {"type": "job_created", "job_id": job_id, "status": "queued",
+                    "message": f"Workspace '{ws_name}' creation queued."}
+        return {"type": "workspace", "action": sub,
+                "message": f"Workspace sub-command '{sub}' acknowledged."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /org create <name>
+    # ------------------------------------------------------------------ #
+    if command == "/org":
+        from app.modules.nora_phase6 import create_organization
+        parts = cleaned_input.split(None, 2)
+        org_name = parts[1] if len(parts) > 1 else f"org-{uuid.uuid4().hex[:6]}"
+        org_slug = org_name.lower().replace(" ", "-")
+        org = await create_organization(db, current_user.id, org_name, org_slug)
+        return {"type": "org_created", "org_id": org.id, "name": org.name,
+                "message": f"Organization '{org.name}' created."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /team invite <username>
+    # ------------------------------------------------------------------ #
+    if command == "/team":
+        from app.modules.nora_phase6 import invite_team_member
+        parts = cleaned_input.split(None, 2)
+        sub = parts[0].lower() if parts else ""
+        if sub == "invite" and len(parts) >= 2:
+            result = await invite_team_member(db, current_user.id, parts[1])
+            return {"type": "team_invite", **result}
+        return {"type": "team", "message": "Usage: /team invite <username>"}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /approve queue
+    # ------------------------------------------------------------------ #
+    if command == "/approve":
+        from app.modules.nora_ops import list_jobs
+        from app.schemas.job import JobOut
+        pending = await list_jobs(db, limit=20)
+        awaiting = [j for j in pending if j.status == "awaiting_approval"]
+        return {
+            "type": "approve_queue",
+            "count": len(awaiting),
+            "jobs": [JobOut.model_validate(j).model_dump() for j in awaiting],
+            "message": f"{len(awaiting)} job(s) awaiting approval.",
+        }
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /promote staging
+    # ------------------------------------------------------------------ #
+    if command == "/promote":
+        from app.worker_client import dispatch_phase6_job
+        job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+        job = Job(job_id=job_id, user_id=current_user.id,
+                  command="/promote", input_text=body.input_text, status="queued")
+        db.add(job)
+        await db.flush()
+        celery_task_id = dispatch_phase6_job("run_promote_staging", job_id, body.input_text, current_user.id)
+        await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        await manager.broadcast(job_id, {
+            "type": "job_created", "job_id": job_id,
+            "command": "/promote", "status": "queued",
+            "message": "Promoting staging → production...",
+        })
+        return {"type": "job_created", "job_id": job_id, "status": "queued",
+                "message": "Staging promotion pipeline queued."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /backup run
+    # ------------------------------------------------------------------ #
+    if command == "/backup":
+        from app.worker_client import dispatch_phase6_job
+        job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+        job = Job(job_id=job_id, user_id=current_user.id,
+                  command="/backup", input_text=body.input_text, status="queued")
+        db.add(job)
+        await db.flush()
+        celery_task_id = dispatch_phase6_job("run_backup_run", job_id, body.input_text, current_user.id)
+        await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        await manager.broadcast(job_id, {
+            "type": "job_created", "job_id": job_id,
+            "command": "/backup", "status": "queued",
+            "message": "Backup job queued.",
+        })
+        return {"type": "job_created", "job_id": job_id, "status": "queued",
+                "message": "Backup run queued."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /restore latest
+    # ------------------------------------------------------------------ #
+    if command == "/restore":
+        from app.modules.nora_phase6 import get_latest_backup, write_audit
+        backup = await get_latest_backup(db)
+        if not backup:
+            return {"type": "error", "message": "No completed backup found to restore."}
+        await write_audit(db, current_user.id, "backup_restore", "backup", backup.backup_id,
+                          "Restore via /restore latest command")
+        return {"type": "restore_started", "backup_id": backup.backup_id,
+                "message": f"Restoring from backup {backup.backup_id}"}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /health full
+    # ------------------------------------------------------------------ #
+    if command == "/health":
+        from app.modules.nora_phase6 import run_health_check
+        health = await run_health_check(db)
+        return {"type": "health", "overall": health["overall"],
+                "services": health["services"],
+                "message": f"System health: {health['overall'].upper()}"}
+
+    # ------------------------------------------------------------------ #
+    # Phase 6 — /analytics dashboard
+    # ------------------------------------------------------------------ #
+    if command == "/analytics":
+        from app.modules.nora_phase6 import get_analytics
+        data = await get_analytics(db)
+        return {
+            "type": "analytics",
+            "total_jobs": data["total_jobs"],
+            "completed_jobs": data["completed_jobs"],
+            "failed_jobs": data["failed_jobs"],
+            "total_deployments": data["total_deployments"],
+            "live_deployments": data["live_deployments"],
+            "top_commands": data["top_commands"][:5],
+            "message": f"Analytics: {data['total_jobs']} jobs, {data['live_deployments']} live deployments.",
+        }
+
     return {"type": "unknown", "message": f"Unrecognized command: {command}"}

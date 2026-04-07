@@ -1,6 +1,7 @@
 """
 NORA-CMD: Reads pilot commands: /deploy, /stop, /status, /build
 Phase 5 adds: /self-upgrade, /global, /dream, /evolve, /consciousness, /personality, /memory, /god
+Phase 6 adds: /workspace, /org, /team, /approve, /promote, /backup, /restore, /health, /analytics
 Parses input and dispatches to appropriate handler.
 """
 import re
@@ -12,6 +13,9 @@ PILOT_COMMANDS = {
     # Phase 5
     "/self-upgrade", "/global", "/dream", "/evolve", "/consciousness",
     "/personality", "/memory", "/god",
+    # Phase 6
+    "/workspace", "/org", "/team", "/approve", "/promote",
+    "/backup", "/restore", "/health", "/analytics",
 }
 
 CHAT_BUILD_PATTERNS = [
@@ -32,6 +36,15 @@ PHASE5_PATTERNS = {
     "/global":        [r"\bglobal (connect|network|sync)\b"],
     "/memory":        [r"\bmemory (search|find|recall)\b"],
     "/personality":   [r"\bpersonality (set|change|update)\b"],
+    # Phase 6 natural-language triggers
+    "/workspace":     [r"\bworkspace (create|switch|new)\b"],
+    "/org":           [r"\borg(anization)? (create|new)\b"],
+    "/team":          [r"\bteam (invite|add)\b"],
+    "/backup":        [r"\bbackup (run|start|now)\b"],
+    "/restore":       [r"\brestore (latest|backup)\b"],
+    "/health":        [r"\bhealth (full|check|status)\b"],
+    "/analytics":     [r"\banalytics (dashboard|show|view)\b"],
+    "/promote":       [r"\bpromote (staging|to production)\b"],
 }
 
 
