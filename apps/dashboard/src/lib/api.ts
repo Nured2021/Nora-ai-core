@@ -1,41 +1,25 @@
 import axios from 'axios'
+import { useAuthStore } from './auth-store'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-export const api = axios.create({
-  baseURL: API_URL,
-})
+export const api = axios.create({ baseURL: API_URL })
 
 api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('nora_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-  }
+  const token = useAuthStore.getState().token
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('nora_token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(err)
-  }
-)
-
 // Auth
 export const login = async (username: string, password: string) => {
-  const form = new FormData()
+  const form = new URLSearchParams()
   form.append('username', username)
   form.append('password', password)
   const res = await api.post('/api/auth/token', form, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
-  return res.data as { access_token: string; token_type: string }
+  return res.data
 }
 
 export const getMe = async () => {
@@ -115,187 +99,5 @@ export const createTactic = async (data: { name: string; description: string; st
 
 export const runTactic = async (tacticId: number) => {
   const res = await api.post(`/api/brain/tactics/${tacticId}/run`)
-  return res.data
-}
-
-// Deployments (Phase 4)
-export const getDeployments = async (limit = 50) => {
-  const res = await api.get(`/api/deployments/?limit=${limit}`)
-  return res.data
-}
-
-export const getDeployment = async (deploymentId: string) => {
-  const res = await api.get(`/api/deployments/${deploymentId}`)
-  return res.data
-}
-
-export const publishDeployment = async (jobId: string) => {
-  const res = await api.post('/api/deployments/', { job_id: jobId })
-  return res.data
-}
-
-// ─── Phase 5 — AI Modules ───────────────────────────────────────────────────
-
-export const getAllModules = async (phase5Only = false) => {
-  const res = await api.get(`/api/phase5/modules${phase5Only ? '?phase5_only=true' : ''}`)
-  return res.data
-}
-
-// ─── Phase 5 — System Status / Consciousness ────────────────────────────────
-
-export const getSystemStatus = async () => {
-  const res = await api.get('/api/phase5/status')
-  return res.data
-}
-
-// ─── Phase 5 — God Mode ─────────────────────────────────────────────────────
-
-export const getGodModeState = async () => {
-  const res = await api.get('/api/phase5/god-mode')
-  return res.data
-}
-
-export const toggleGodMode = async () => {
-  const res = await api.post('/api/phase5/god-mode/toggle')
-  return res.data
-}
-
-export const setGodModeOn = async () => {
-  const res = await api.post('/api/phase5/god-mode/on')
-  return res.data
-}
-
-export const setGodModeOff = async () => {
-  const res = await api.post('/api/phase5/god-mode/off')
-  return res.data
-}
-
-// ─── Phase 5 — Personality ──────────────────────────────────────────────────
-
-export const getPersonality = async () => {
-  const res = await api.get('/api/phase5/personality')
-  return res.data
-}
-
-export const setPersonalityTrait = async (trait: string, value: string) => {
-  const res = await api.post('/api/phase5/personality', { trait, value })
-  return res.data
-}
-
-// ─── Phase 5 — Global Network ───────────────────────────────────────────────
-
-export const getGlobalNetwork = async () => {
-  const res = await api.get('/api/phase5/global-network')
-  return res.data
-}
-
-// ─── Phase 5 — Evolved Modules ──────────────────────────────────────────────
-
-export const getEvolvedModules = async () => {
-  const res = await api.get('/api/phase5/evolved-modules')
-  return res.data
-}
-
-// ─── Phase 5 — Memory Search ────────────────────────────────────────────────
-
-export const searchMemory = async (query: string) => {
-  const res = await api.post(`/api/phase5/memory/search?query=${encodeURIComponent(query)}`)
-  return res.data
-}
-
-// ─── Phase 6 — Organizations ────────────────────────────────────────────────
-
-export const getOrganizations = async () => {
-  const res = await api.get('/api/phase6/organizations')
-  return res.data
-}
-
-export const createOrganization = async (name: string, slug: string, plan = 'free') => {
-  const res = await api.post('/api/phase6/organizations', { name, slug, plan })
-  return res.data
-}
-
-// ─── Phase 6 — Workspaces ───────────────────────────────────────────────────
-
-export const getWorkspaces = async () => {
-  const res = await api.get('/api/phase6/workspaces')
-  return res.data
-}
-
-export const createWorkspace = async (name: string, slug: string, description?: string, template?: string, org_id?: number) => {
-  const res = await api.post('/api/phase6/workspaces', { name, slug, description, template, org_id })
-  return res.data
-}
-
-// ─── Phase 6 — Team ─────────────────────────────────────────────────────────
-
-export const getTeamMembers = async (org_id?: number, workspace_id?: number) => {
-  const params = new URLSearchParams()
-  if (org_id) params.set('org_id', String(org_id))
-  if (workspace_id) params.set('workspace_id', String(workspace_id))
-  const res = await api.get(`/api/phase6/team?${params.toString()}`)
-  return res.data
-}
-
-export const inviteTeamMember = async (username: string, role = 'VIEWER', org_id?: number, workspace_id?: number) => {
-  const res = await api.post('/api/phase6/team/invite', { username, role, org_id, workspace_id })
-  return res.data
-}
-
-// ─── Phase 6 — Audit Log ────────────────────────────────────────────────────
-
-export const getAuditLog = async (limit = 100) => {
-  const res = await api.get(`/api/phase6/audit-log?limit=${limit}`)
-  return res.data
-}
-
-// ─── Phase 6 — Backups ──────────────────────────────────────────────────────
-
-export const getBackups = async () => {
-  const res = await api.get('/api/phase6/backups')
-  return res.data
-}
-
-export const runBackup = async (note?: string) => {
-  const params = note ? `?note=${encodeURIComponent(note)}` : ''
-  const res = await api.post(`/api/phase6/backups/run${params}`)
-  return res.data
-}
-
-export const restoreLatestBackup = async () => {
-  const res = await api.post('/api/phase6/backups/restore')
-  return res.data
-}
-
-// ─── Phase 6 — Environments ─────────────────────────────────────────────────
-
-export const getEnvironments = async () => {
-  const res = await api.get('/api/phase6/environments')
-  return res.data
-}
-
-export const createEnvironment = async (name: string, env_type = 'staging', workspace_id?: number) => {
-  const params = new URLSearchParams({ name, env_type })
-  if (workspace_id) params.set('workspace_id', String(workspace_id))
-  const res = await api.post(`/api/phase6/environments?${params.toString()}`)
-  return res.data
-}
-
-export const promoteEnvironment = async (envId: number, target = 'production', note?: string) => {
-  const res = await api.post(`/api/phase6/environments/${envId}/promote`, { environment_id: envId, target, note })
-  return res.data
-}
-
-// ─── Phase 6 — Health ───────────────────────────────────────────────────────
-
-export const getSystemHealth = async () => {
-  const res = await api.get('/api/phase6/health')
-  return res.data
-}
-
-// ─── Phase 6 — Analytics ────────────────────────────────────────────────────
-
-export const getAnalytics = async () => {
-  const res = await api.get('/api/phase6/analytics')
   return res.data
 }

@@ -4,12 +4,9 @@ import { useState, useCallback } from 'react'
 import { CommandInput } from '@/components/CommandInput'
 import { LiveResults } from '@/components/LiveResults'
 import { JobList } from '@/components/JobList'
-import { AIPlanPanel } from '@/components/AIPlanPanel'
-import { AIFilesPanel } from '@/components/AIFilesPanel'
-import { PreviewPanel, PhaseBadge } from '@/components/PreviewPanel'
 import { useGlobalFeed } from '@/hooks/useWebSocket'
-import { getJobs, getJob } from '@/lib/api'
-import { Job, WsMessage, AIPlan, AIFile } from '@/types'
+import { getJobs } from '@/lib/api'
+import { Job, WsMessage } from '@/types'
 import { Hammer } from 'lucide-react'
 
 interface LogEntry {
@@ -35,12 +32,6 @@ export default function BuilderPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [fillValue, setFillValue] = useState('')
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
-  const [aiPlan, setAiPlan] = useState<AIPlan | null>(null)
-  const [aiFiles, setAiFiles] = useState<AIFile[]>([])
-  const [phase, setPhase] = useState<string>('')
-  const [previewUrl, setPreviewUrl] = useState<string>('')
-  const [projectPath, setProjectPath] = useState<string>('')
-  const [gitCommit, setGitCommit] = useState<string>('')
 
   const handleWs = useCallback((msg: WsMessage) => {
     if (msg.type === 'job_log') {
@@ -56,33 +47,7 @@ export default function BuilderPage() {
     if (msg.type === 'job_created' || msg.type === 'job_update') {
       getJobs(20).then(setJobs).catch(() => {})
     }
-    if (msg.type === 'ai_plan' && msg.job_id === activeJobId && msg.plan) {
-      setAiPlan(msg.plan)
-    }
-    // Phase 3: execution phase updates
-    if (msg.type === 'job_phase' && msg.job_id === activeJobId && msg.phase) {
-      setPhase(msg.phase)
-    }
-    // Phase 3: preview ready
-    if (msg.type === 'preview_ready' && msg.job_id === activeJobId) {
-      if (msg.preview_url) setPreviewUrl(msg.preview_url)
-      if (msg.project_path) setProjectPath(msg.project_path)
-      if (msg.git_commit) setGitCommit(msg.git_commit)
-    }
-    // Fetch full result when job completes
-    if (
-      msg.type === 'job_update' &&
-      msg.status === 'completed' &&
-      msg.job_id === activeJobId
-    ) {
-      getJob(msg.job_id!).then((job: Job) => {
-        if (job.result?.files) setAiFiles(job.result.files)
-        if (job.result?.preview_url) setPreviewUrl(job.result.preview_url)
-        if (job.result?.project_path) setProjectPath(job.result.project_path)
-        if (job.result?.git_commit) setGitCommit(job.result.git_commit)
-      }).catch(() => {})
-    }
-  }, [activeJobId])
+  }, [])
 
   useGlobalFeed(handleWs)
 
@@ -94,14 +59,7 @@ export default function BuilderPage() {
       created_at: new Date().toISOString(),
     }])
     if (result.type === 'job_created') {
-      const jobId = result.job_id as string
-      setActiveJobId(jobId)
-      setAiPlan(null)
-      setAiFiles([])
-      setPhase('planning')
-      setPreviewUrl('')
-      setProjectPath('')
-      setGitCommit('')
+      setActiveJobId(result.job_id as string)
       getJobs(20).then(setJobs).catch(() => {})
     }
   }
@@ -109,11 +67,10 @@ export default function BuilderPage() {
   return (
     <div className="flex flex-col h-full p-4 gap-4 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2">
         <Hammer className="w-5 h-5 text-nora-accent" />
         <h1 className="text-lg font-bold text-nora-text">System Builder</h1>
-        <span className="text-xs text-nora-muted">NORA-ARCH + NORA-CODE + Phase 3</span>
-        {phase && phase !== 'completed' && <PhaseBadge phase={phase} />}
+        <span className="text-xs text-nora-muted">NORA-BUILDER · NORA-ARCH · NORA-CODE</span>
       </div>
 
       {/* Example prompts */}
@@ -121,8 +78,8 @@ export default function BuilderPage() {
         {EXAMPLES.map((ex) => (
           <span
             key={ex}
-            className="text-xs bg-nora-surface border border-nora-border rounded-full px-3 py-1 text-nora-muted hover:text-nora-text hover:border-nora-accent cursor-pointer transition-colors"
             onClick={() => setFillValue(`build ${ex.replace(/^build /, '')}`)}
+            className="text-xs bg-nora-surface border border-nora-border rounded-full px-3 py-1 text-nora-muted hover:text-nora-text hover:border-nora-accent cursor-pointer transition-colors"
           >
             {ex}
           </span>
@@ -141,23 +98,6 @@ export default function BuilderPage() {
           <JobList jobs={jobs} selectedJobId={selectedJob?.job_id} onSelect={setSelectedJob} />
         </div>
       </div>
-
-      {/* AI Plan */}
-      {aiPlan && <AIPlanPanel plan={aiPlan} />}
-
-      {/* Generated Files */}
-      {aiFiles.length > 0 && <AIFilesPanel files={aiFiles} />}
-
-      {/* Phase 3: Live Preview */}
-      {previewUrl && (
-        <PreviewPanel
-          previewUrl={previewUrl}
-          projectPath={projectPath}
-          gitCommit={gitCommit}
-        />
-      )}
     </div>
   )
 }
-
-

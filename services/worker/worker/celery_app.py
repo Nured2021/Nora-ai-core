@@ -13,10 +13,6 @@ celery_app = Celery(
     backend=REDIS_URL,
     include=[
         "worker.tasks.build",
-        "worker.tasks.deploy",
-        "worker.tasks.ai_build",
-        "worker.tasks.phase5",
-        "worker.tasks.phase6",
     ],
 )
 
