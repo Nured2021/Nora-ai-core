@@ -7,6 +7,7 @@ Celery task: NORA-ARCH (plan) → NORA-CODE (generate) → fs_writer (disk) →
 No-stop: runs until complete or explicitly cancelled.
 Streams logs + plan + file + phase + preview events via Redis pub/sub → WebSocket.
 """
+import os
 import time
 
 from worker.celery_app import celery_app
@@ -127,8 +128,10 @@ def run_ai_build(self, job_id: str, input_text: str, user_id: int):
             log(session, job_id, f"[NORA-PREVIEW] Project files available at: {project_path}", step=step)
 
         # ------------------------------------------------------------------ #
-        # Done
+        # Done — print access links clearly
         # ------------------------------------------------------------------ #
+        dashboard_url = os.getenv("DASHBOARD_URL", "http://localhost:3000")
+
         step += 1
         publish_phase(job_id, "completed", "Build complete")
         log(session, job_id, f"[NORA-CHAT] ✓ Build complete: {plan['name']}", step=step)
@@ -136,8 +139,16 @@ def run_ai_build(self, job_id: str, input_text: str, user_id: int):
         log(session, job_id, f"[NORA-CHAT] Project path: {project_path}", step=step, level="SUCCESS")
         if git_commit:
             log(session, job_id, f"[NORA-CHAT] Git commit: {git_commit}", step=step)
+
+        # Access links block
+        log(session, job_id, "─" * 48, step=step)
+        log(session, job_id, "🔗  ACCESS LINKS", step=step, level="SUCCESS")
+        log(session, job_id, f"  Dashboard : {dashboard_url}", step=step, level="SUCCESS")
         if preview_url:
-            log(session, job_id, f"[NORA-CHAT] Live preview: {preview_url}", step=step, level="SUCCESS")
+            log(session, job_id, f"  App preview: {preview_url}", step=step, level="SUCCESS")
+        else:
+            log(session, job_id, "  App preview: (not started — see project files on disk)", step=step, level="WARN")
+        log(session, job_id, "─" * 48, step=step)
 
         result = {
             "plan": plan,
