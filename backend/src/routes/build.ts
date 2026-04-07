@@ -83,9 +83,12 @@ router.get('/status', (req: Request, res: Response): void => {
     }
     res.json({
       id: session.id,
+      prompt: session.prompt,
       status: session.status,
       currentStage: session.currentStage,
       stages: session.stages,
+      instructions: session.instructions,
+      approvals: session.approvals,
       updatedAt: session.updatedAt,
       createdAt: session.createdAt,
       completedAt: session.completedAt,

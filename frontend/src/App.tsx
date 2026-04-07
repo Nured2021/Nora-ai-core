@@ -55,7 +55,7 @@ export default function App() {
         </div>
 
         <div className="w-80 flex-shrink-0 border-l border-[#1e1e2e] overflow-hidden">
-          <PreviewPanel session={session} />
+          <PreviewPanel session={session} filesCount={files.length} />
         </div>
       </div>
     </div>

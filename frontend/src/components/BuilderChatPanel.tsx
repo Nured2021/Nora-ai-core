@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { BuildSession, BuildInstruction } from '../types/build';
 import { InstructionInput } from './InstructionInput';
 import { ApprovalControls } from './ApprovalControls';
@@ -75,7 +75,7 @@ export const BuilderChatPanel: React.FC<BuilderChatPanelProps> = ({
               </div>
             </div>
 
-            {session.stages
+            {(session.stages ?? [])
               .filter(s => s.startedAt)
               .map(stage => (
                 <div key={stage.name} className="flex gap-2">
@@ -98,7 +98,7 @@ export const BuilderChatPanel: React.FC<BuilderChatPanelProps> = ({
                 </div>
               ))}
 
-            {session.instructions.map((instr: BuildInstruction) => (
+            {(session.instructions ?? []).map((instr: BuildInstruction) => (
               <div key={instr.id} className="flex gap-2">
                 <div className="w-6 h-6 rounded bg-indigo-900 border border-indigo-700 flex items-center justify-center shrink-0 mt-0.5">
                   <span className="text-indigo-300 text-xs font-bold">U</span>

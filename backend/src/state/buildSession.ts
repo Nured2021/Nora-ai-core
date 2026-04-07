@@ -159,6 +159,11 @@ function advanceToNextStage() {
 
   if (nextStage === 'complete') {
     currentSession.completedAt = new Date().toISOString();
+    // Also mark the complete stage itself as done
+    const completeStageObj = currentSession.stages.find(s => s.name === 'complete');
+    if (completeStageObj) {
+      completeStageObj.completedAt = currentSession.completedAt;
+    }
   }
 }
 

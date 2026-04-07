@@ -3,9 +3,10 @@ import type { BuildSession } from '../types/build';
 
 interface PreviewPanelProps {
   session: BuildSession | null;
+  filesCount?: number;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ session }) => {
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ session, filesCount = 0 }) => {
   const isComplete = session?.status === 'complete';
 
   return (
@@ -88,7 +89,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ session }) => {
                   ))}
                 </div>
                 <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-700 font-sans">
-                  ✓ Build complete — {session?.files?.length || 0} files generated
+                  ✓ Build complete — {filesCount} files generated
                 </div>
               </div>
             </div>
@@ -107,7 +108,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ session }) => {
         </div>
         {session && (
           <span className="text-xs text-gray-600 font-mono ml-auto">
-            {session.files?.length || 0} files
+            {filesCount} files
           </span>
         )}
       </div>
