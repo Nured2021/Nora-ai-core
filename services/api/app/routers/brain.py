@@ -56,6 +56,7 @@ async def create_tactic(
     )
     db.add(tactic)
     await db.flush()
+    await db.commit()
     await db.refresh(tactic)
     return TacticOut.model_validate(tactic)
 

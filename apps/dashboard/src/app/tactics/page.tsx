@@ -85,7 +85,7 @@ export default function TacticsPage() {
             className="w-full bg-nora-bg border border-nora-border rounded px-3 py-2 text-sm text-nora-text outline-none focus:border-nora-accent"
           />
           <textarea
-            placeholder={"Steps (one per line):\nbuild React frontend\nbuild FastAPI backend\nrun tests"}
+            placeholder={`Steps (one per line):\nbuild React frontend\nbuild FastAPI backend\nrun tests`}
             value={newSteps}
             onChange={(e) => setNewSteps(e.target.value)}
             rows={4}

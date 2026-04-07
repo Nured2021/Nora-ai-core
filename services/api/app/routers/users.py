@@ -53,5 +53,6 @@ async def update_user(
     if body.is_active is not None:
         user.is_active = body.is_active
     await db.flush()
+    await db.commit()
     await db.refresh(user)
     return UserOut.model_validate(user)
