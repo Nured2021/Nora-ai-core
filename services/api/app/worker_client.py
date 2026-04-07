@@ -68,3 +68,13 @@ def dispatch_publish_job(
         queue="default",
     )
     return result.id
+
+
+def dispatch_phase5_job(task_name: str, job_id: str, input_text: str, user_id: int) -> str:
+    """Dispatch a Phase 5 task (self-upgrade, dream, evolve, global-sync)."""
+    result = celery_app.send_task(
+        f"worker.tasks.phase5.{task_name}",
+        args=[job_id, input_text, user_id],
+        queue="default",
+    )
+    return result.id

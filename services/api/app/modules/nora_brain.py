@@ -1,6 +1,6 @@
 """
 NORA-BRAIN: Remembers everything. Learns from user.
-Implements the 10 Brain Connect layers.
+Implements 50 Brain Connect layers (Phase 1: 1-10, Phase 5: 41-50 added).
 """
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,16 +8,59 @@ from sqlalchemy import select, update
 from app.models.brain import BrainMemory
 
 BRAIN_LAYERS = {
-    1: "Command History Memory",
-    2: "Code Pattern Recognition",
-    3: "User Preference Learning",
-    4: "System State Tracking",
-    5: "HumanLoop Feedback Storage",
-    6: "Deployment Target Memory",
-    7: "Error Recovery Tactics",
-    8: "Multi-User Role Mapping",
-    9: "Builder Template Library",
+    # Phase 1 — layers 1-10
+    1:  "Command History Memory",
+    2:  "Code Pattern Recognition",
+    3:  "User Preference Learning",
+    4:  "System State Tracking",
+    5:  "HumanLoop Feedback Storage",
+    6:  "Deployment Target Memory",
+    7:  "Error Recovery Tactics",
+    8:  "Multi-User Role Mapping",
+    9:  "Builder Template Library",
     10: "Real-Time Feedback Loop",
+    # Phase 2-4 — layers 11-40
+    11: "Session Context Memory",
+    12: "Code Style Preferences",
+    13: "Dependency Registry",
+    14: "API Pattern Library",
+    15: "Test Results Archive",
+    16: "Deployment History Mapping",
+    17: "Agent Performance Tracking",
+    18: "Cross-Project Knowledge Base",
+    19: "Self-Improvement Log",
+    20: "God Mode Decision Log",
+    21: "File Generation History",
+    22: "Preview Server Registry",
+    23: "Git Commit History",
+    24: "Stack Detection Log",
+    25: "Install Log Archive",
+    26: "Build Output Cache",
+    27: "Schema Evolution Log",
+    28: "Route Mapping Memory",
+    29: "Auth Token History",
+    30: "Workspace State Map",
+    31: "Job Duration Analytics",
+    32: "Error Pattern Library",
+    33: "Command Frequency Map",
+    34: "User Feedback Archive",
+    35: "Module Invocation Log",
+    36: "Queue Health History",
+    37: "Redis Event Archive",
+    38: "DB Query Patterns",
+    39: "Worker Task Registry",
+    40: "System Config Snapshots",
+    # Phase 5 — layers 41-50 (blueprint)
+    41: "Self-Modification Memory",
+    42: "Global Network Mapping",
+    43: "Emotional/Context Memory",
+    44: "Dream Processing Engine",
+    45: "Emergent AI Generation",
+    46: "Awareness Tracking",
+    47: "AI Hierarchy Mapping",
+    48: "Infinite Indexed Memory",
+    49: "Personality State Tracking",
+    50: "Universal Command Mapping",
 }
 
 

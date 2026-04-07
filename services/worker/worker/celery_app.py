@@ -11,7 +11,12 @@ celery_app = Celery(
     "nora_worker",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["worker.tasks.build", "worker.tasks.deploy", "worker.tasks.ai_build"],
+    include=[
+        "worker.tasks.build",
+        "worker.tasks.deploy",
+        "worker.tasks.ai_build",
+        "worker.tasks.phase5",
+    ],
 )
 
 celery_app.conf.update(

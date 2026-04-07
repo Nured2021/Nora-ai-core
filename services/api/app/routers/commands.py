@@ -186,4 +186,163 @@ async def dispatch_command(
         })
         return {"type": "job_created", "job_id": job_id, "status": "queued"}
 
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /god mode on|off
+    # ------------------------------------------------------------------ #
+    if command == "/god":
+        from app.modules.nora_phase5 import set_god_mode, get_god_mode
+        rest = cleaned_input.lower()
+        if "off" in rest:
+            state = await set_god_mode(db, current_user.id, False)
+            msg = "GOD MODE deactivated."
+        else:
+            # /god mode on (default: activate)
+            if current_user.role not in ("ADMIN", "DEVELOPER"):
+                return {"type": "error", "message": "GOD MODE requires ADMIN or DEVELOPER role"}
+            state = await set_god_mode(db, current_user.id, True)
+            msg = "⚡ GOD MODE ACTIVATED — NORA has full autonomous control."
+        await manager.broadcast("system", {
+            "type": "god_mode_change",
+            "active": state.active,
+            "user_id": current_user.id,
+            "message": msg,
+        })
+        return {"type": "god_mode", "active": state.active, "message": msg}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /self-upgrade: queue self-upgrade job
+    # ------------------------------------------------------------------ #
+    if command == "/self-upgrade":
+        from app.worker_client import dispatch_phase5_job
+        job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+        job = Job(job_id=job_id, user_id=current_user.id,
+                  command="/self-upgrade", input_text=body.input_text, status="queued")
+        db.add(job)
+        await db.flush()
+        celery_task_id = dispatch_phase5_job("run_self_upgrade", job_id, body.input_text, current_user.id)
+        await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        await manager.broadcast(job_id, {
+            "type": "job_created", "job_id": job_id,
+            "command": "/self-upgrade", "status": "queued",
+            "message": "NORA-SELF: Self-upgrade initiated",
+        })
+        return {"type": "job_created", "job_id": job_id, "status": "queued",
+                "message": "NORA-SELF: Analyzing and upgrading system code..."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /global connect|sync
+    # ------------------------------------------------------------------ #
+    if command == "/global":
+        from app.worker_client import dispatch_phase5_job
+        job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+        job = Job(job_id=job_id, user_id=current_user.id,
+                  command="/global", input_text=body.input_text, status="queued")
+        db.add(job)
+        await db.flush()
+        celery_task_id = dispatch_phase5_job("run_global_sync", job_id, body.input_text, current_user.id)
+        await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        await manager.broadcast(job_id, {
+            "type": "job_created", "job_id": job_id,
+            "command": "/global", "status": "queued",
+            "message": "NORA-GLOBAL: Connecting to global network...",
+        })
+        return {"type": "job_created", "job_id": job_id, "status": "queued",
+                "message": "NORA-GLOBAL: Connecting to global NORA network..."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /dream on|off
+    # ------------------------------------------------------------------ #
+    if command == "/dream":
+        from app.worker_client import dispatch_phase5_job
+        rest = cleaned_input.lower()
+        if "off" in rest:
+            return {"type": "dream_mode", "active": False,
+                    "message": "NORA-DREAM: Dream mode deactivated."}
+        job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+        job = Job(job_id=job_id, user_id=current_user.id,
+                  command="/dream", input_text=body.input_text, status="queued")
+        db.add(job)
+        await db.flush()
+        celery_task_id = dispatch_phase5_job("run_dream_job", job_id, body.input_text, current_user.id)
+        await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        await manager.broadcast(job_id, {
+            "type": "job_created", "job_id": job_id,
+            "command": "/dream", "status": "queued",
+            "message": "NORA-DREAM: Dream mode activated. Running idle generation...",
+        })
+        return {"type": "job_created", "job_id": job_id, "status": "queued",
+                "message": "NORA-DREAM: Dream mode activated. NORA will run creative jobs while idle."}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /evolve new <module_name>
+    # ------------------------------------------------------------------ #
+    if command == "/evolve":
+        from app.worker_client import dispatch_phase5_job
+        job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+        job = Job(job_id=job_id, user_id=current_user.id,
+                  command="/evolve", input_text=body.input_text, status="queued")
+        db.add(job)
+        await db.flush()
+        celery_task_id = dispatch_phase5_job("run_evolve", job_id, body.input_text, current_user.id)
+        await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        await manager.broadcast(job_id, {
+            "type": "job_created", "job_id": job_id,
+            "command": "/evolve", "status": "queued",
+            "message": f"NORA-EVOLVE: Creating new AI module — {cleaned_input}",
+        })
+        return {"type": "job_created", "job_id": job_id, "status": "queued",
+                "message": f"NORA-EVOLVE: Evolving new AI module from: {cleaned_input}"}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /consciousness (synchronous: returns status inline)
+    # ------------------------------------------------------------------ #
+    if command == "/consciousness":
+        from app.modules.nora_phase5 import get_system_status
+        status = await get_system_status(db, current_user.id)
+        return {"type": "consciousness", "status": status,
+                "message": f"NORA-CONSCIOUS: Consciousness level — {status['consciousness_level']}"}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /personality set <trait> <value>
+    # ------------------------------------------------------------------ #
+    if command == "/personality":
+        from app.modules.nora_phase5 import set_personality_trait
+        parts = cleaned_input.split(None, 2)
+        # /personality set tone friendly  OR  /personality tone friendly
+        if len(parts) >= 3 and parts[0].lower() == "set":
+            trait, value = parts[1], parts[2]
+        elif len(parts) >= 2:
+            trait, value = parts[0], parts[1]
+        else:
+            return {"type": "error",
+                    "message": "Usage: /personality set <trait> <value> — e.g. /personality set tone friendly"}
+        await set_personality_trait(db, current_user.id, trait.lower(), value)
+        return {"type": "personality_set", "trait": trait.lower(), "value": value,
+                "message": f"NORA-SOUL: Personality trait '{trait}' set to '{value}'"}
+
+    # ------------------------------------------------------------------ #
+    # Phase 5 — /memory search <query>
+    # ------------------------------------------------------------------ #
+    if command == "/memory":
+        from app.modules.nora_phase5 import search_memories
+        parts = cleaned_input.split(None, 1)
+        if len(parts) >= 2 and parts[0].lower() == "search":
+            query = parts[1]
+        elif len(parts) >= 1 and parts[0].lower() != "search":
+            query = cleaned_input
+        else:
+            return {"type": "error",
+                    "message": "Usage: /memory search <query> — e.g. /memory search build"}
+        results = await search_memories(db, current_user.id, query)
+        return {
+            "type": "memory_search",
+            "query": query,
+            "count": len(results),
+            "results": [
+                {"layer": m.layer, "layer_name": m.layer_name, "key": m.key, "value": m.value}
+                for m in results[:20]
+            ],
+            "message": f"NORA-MEMORY: Found {len(results)} memories matching '{query}'",
+        }
+
     return {"type": "unknown", "message": f"Unrecognized command: {command}"}
