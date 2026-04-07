@@ -112,3 +112,74 @@ export interface Deployment {
   created_at: string
   updated_at?: string
 }
+
+// ─── Phase 5 ────────────────────────────────────────────────────────────────
+
+export interface Phase5Module {
+  number: number
+  name: string
+  description: string
+  phase: number
+  active: boolean
+}
+
+export interface PersonalityTrait {
+  id: number
+  user_id: number
+  trait: string
+  value: string
+  updated_at: string
+}
+
+export interface GodModeState {
+  user_id: number
+  active: boolean
+  activated_at?: string
+  updated_at: string
+}
+
+export interface SystemStatus {
+  god_mode_active: boolean
+  active_modules: number
+  total_modules: number
+  brain_layers: number
+  evolved_modules: number
+  dream_mode: string
+  global_network: string
+  personality_traits: number
+  consciousness_level: string
+}
+
+export interface NetworkNode {
+  id: string
+  region: string
+  status: string
+  latency_ms: number
+}
+
+export interface GlobalNetwork {
+  status: string
+  nodes: NetworkNode[]
+  last_sync?: string
+  message: string
+}
+
+export interface EvolvedModule {
+  id: number
+  name: string
+  description: string
+  capabilities: string
+  created_by_id: number
+  active: boolean
+  created_at: string
+}
+
+export interface MemorySearchResult {
+  id: number
+  user_id: number
+  layer: number
+  layer_name: string
+  key: string
+  value: string
+  created_at: string
+}

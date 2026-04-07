@@ -133,3 +133,72 @@ export const publishDeployment = async (jobId: string) => {
   const res = await api.post('/api/deployments/', { job_id: jobId })
   return res.data
 }
+
+// ─── Phase 5 — AI Modules ───────────────────────────────────────────────────
+
+export const getAllModules = async (phase5Only = false) => {
+  const res = await api.get(`/api/phase5/modules${phase5Only ? '?phase5_only=true' : ''}`)
+  return res.data
+}
+
+// ─── Phase 5 — System Status / Consciousness ────────────────────────────────
+
+export const getSystemStatus = async () => {
+  const res = await api.get('/api/phase5/status')
+  return res.data
+}
+
+// ─── Phase 5 — God Mode ─────────────────────────────────────────────────────
+
+export const getGodModeState = async () => {
+  const res = await api.get('/api/phase5/god-mode')
+  return res.data
+}
+
+export const toggleGodMode = async () => {
+  const res = await api.post('/api/phase5/god-mode/toggle')
+  return res.data
+}
+
+export const setGodModeOn = async () => {
+  const res = await api.post('/api/phase5/god-mode/on')
+  return res.data
+}
+
+export const setGodModeOff = async () => {
+  const res = await api.post('/api/phase5/god-mode/off')
+  return res.data
+}
+
+// ─── Phase 5 — Personality ──────────────────────────────────────────────────
+
+export const getPersonality = async () => {
+  const res = await api.get('/api/phase5/personality')
+  return res.data
+}
+
+export const setPersonalityTrait = async (trait: string, value: string) => {
+  const res = await api.post('/api/phase5/personality', { trait, value })
+  return res.data
+}
+
+// ─── Phase 5 — Global Network ───────────────────────────────────────────────
+
+export const getGlobalNetwork = async () => {
+  const res = await api.get('/api/phase5/global-network')
+  return res.data
+}
+
+// ─── Phase 5 — Evolved Modules ──────────────────────────────────────────────
+
+export const getEvolvedModules = async () => {
+  const res = await api.get('/api/phase5/evolved-modules')
+  return res.data
+}
+
+// ─── Phase 5 — Memory Search ────────────────────────────────────────────────
+
+export const searchMemory = async (query: string) => {
+  const res = await api.post(`/api/phase5/memory/search?query=${encodeURIComponent(query)}`)
+  return res.data
+}
