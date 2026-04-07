@@ -1,0 +1,60 @@
+# Node
+node_modules/
+.next/
+.nuxt/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.eggs/
+dist/
+*.so
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Docker
+*.tar
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Testing
+coverage/
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Build artifacts
+*.egg
+.mypy_cache/
