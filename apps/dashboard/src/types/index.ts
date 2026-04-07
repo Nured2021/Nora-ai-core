@@ -17,6 +17,10 @@ export interface JobResult {
   files?: AIFile[]
   files_created?: string[]
   input?: string
+  // Phase 3 fields
+  project_path?: string
+  git_commit?: string
+  preview_url?: string
   // legacy simulation fields
   tests_passed?: number
 }
@@ -81,4 +85,9 @@ export interface WsMessage {
   // Phase 2: AI plan/files broadcast
   plan?: AIPlan
   file_paths?: string[]
+  // Phase 3: execution phase + preview
+  phase?: string
+  preview_url?: string
+  project_path?: string
+  git_commit?: string
 }

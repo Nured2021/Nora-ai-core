@@ -51,3 +51,26 @@ def publish_files(job_id: str, file_paths: list):
         "file_paths": file_paths,
     }
     _redis.publish(WS_CHANNEL, json.dumps(event))
+
+
+def publish_phase(job_id: str, phase: str, message: str = ""):
+    """Broadcast the current execution phase (Phase 3 extended status)."""
+    event = {
+        "type": "job_phase",
+        "job_id": job_id,
+        "phase": phase,
+        "message": message,
+    }
+    _redis.publish(WS_CHANNEL, json.dumps(event))
+
+
+def publish_preview(job_id: str, preview_url: str, project_path: str, git_commit: str = ""):
+    """Broadcast preview URL and project path once the build is ready."""
+    event = {
+        "type": "preview_ready",
+        "job_id": job_id,
+        "preview_url": preview_url,
+        "project_path": project_path,
+        "git_commit": git_commit,
+    }
+    _redis.publish(WS_CHANNEL, json.dumps(event))

@@ -64,6 +64,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       DATABASE_SYNC_URL: postgresql://nora:nora_pass@postgres:5432/nora_db
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      WORKSPACE_ROOT: /workspace
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,6 +72,9 @@ services:
         condition: service_healthy
     volumes:
       - ./services/worker:/app
+      - workspace_data:/workspace
+    ports:
+      - "3001-3010:3001-3010"
     restart: unless-stopped
 
   dashboard:
@@ -90,3 +94,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  workspace_data:

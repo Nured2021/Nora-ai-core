@@ -5,6 +5,7 @@ import { JobList } from '@/components/JobList'
 import { LiveResults } from '@/components/LiveResults'
 import { AIPlanPanel } from '@/components/AIPlanPanel'
 import { AIFilesPanel } from '@/components/AIFilesPanel'
+import { PreviewPanel, PhaseBadge } from '@/components/PreviewPanel'
 import { useGlobalFeed } from '@/hooks/useWebSocket'
 import { getJobs, getJob, getJobLogs } from '@/lib/api'
 import { Job, JobLog, WsMessage, AIPlan, AIFile } from '@/types'
@@ -26,6 +27,10 @@ export default function LiveJobsPage() {
   const [loading, setLoading] = useState(false)
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null)
   const [aiFiles, setAiFiles] = useState<AIFile[]>([])
+  const [phase, setPhase] = useState<string>('')
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [projectPath, setProjectPath] = useState<string>('')
+  const [gitCommit, setGitCommit] = useState<string>('')
 
   const fetchJobs = useCallback(() => {
     setLoading(true)
@@ -39,6 +44,10 @@ export default function LiveJobsPage() {
     setLogs([])
     setAiPlan(null)
     setAiFiles([])
+    setPhase('')
+    setPreviewUrl('')
+    setProjectPath('')
+    setGitCommit('')
     try {
       const entries: JobLog[] = await getJobLogs(job.job_id)
       setLogs(entries.map((e) => ({
@@ -50,11 +59,14 @@ export default function LiveJobsPage() {
         job_id: e.job_id,
       })))
     } catch {}
-    // Fetch full job detail to get AI plan + files from result
+    // Fetch full job for AI plan + Phase 3 results
     try {
       const fullJob: Job = await getJob(job.job_id)
       if (fullJob.result?.plan) setAiPlan(fullJob.result.plan)
       if (fullJob.result?.files) setAiFiles(fullJob.result.files)
+      if (fullJob.result?.preview_url) setPreviewUrl(fullJob.result.preview_url)
+      if (fullJob.result?.project_path) setProjectPath(fullJob.result.project_path)
+      if (fullJob.result?.git_commit) setGitCommit(fullJob.result.git_commit)
     } catch {}
   }
 
@@ -69,11 +81,19 @@ export default function LiveJobsPage() {
         job_id: msg.job_id,
       }])
     }
-    // Phase 2: live plan broadcast
     if (msg.type === 'ai_plan' && selectedJob && msg.job_id === selectedJob.job_id && msg.plan) {
       setAiPlan(msg.plan)
     }
-    // Phase 2: fetch files when job completes
+    // Phase 3: phase updates
+    if (msg.type === 'job_phase' && selectedJob && msg.job_id === selectedJob.job_id && msg.phase) {
+      setPhase(msg.phase)
+    }
+    // Phase 3: preview ready
+    if (msg.type === 'preview_ready' && selectedJob && msg.job_id === selectedJob.job_id) {
+      if (msg.preview_url) setPreviewUrl(msg.preview_url)
+      if (msg.project_path) setProjectPath(msg.project_path)
+      if (msg.git_commit) setGitCommit(msg.git_commit)
+    }
     if (
       msg.type === 'job_update' &&
       msg.status === 'completed' &&
@@ -82,6 +102,9 @@ export default function LiveJobsPage() {
     ) {
       getJob(msg.job_id!).then((job: Job) => {
         if (job.result?.files) setAiFiles(job.result.files)
+        if (job.result?.preview_url) setPreviewUrl(job.result.preview_url)
+        if (job.result?.project_path) setProjectPath(job.result.project_path)
+        if (job.result?.git_commit) setGitCommit(job.result.git_commit)
         setSelectedJob(job)
       }).catch(() => {})
     }
@@ -119,7 +142,7 @@ export default function LiveJobsPage() {
         {selectedJob ? (
           <>
             {/* Job header */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <span className="text-xs font-mono text-nora-accent">{selectedJob.job_id}</span>
               <span className="text-xs text-nora-muted">{selectedJob.command}</span>
               <span className="text-xs text-nora-text truncate flex-1">{selectedJob.input_text}</span>
@@ -129,6 +152,7 @@ export default function LiveJobsPage() {
                 selectedJob.status === 'failed' ? 'text-nora-error' :
                 'text-nora-muted'
               }`}>{selectedJob.status}</span>
+              {phase && phase !== 'completed' && <PhaseBadge phase={phase} />}
             </div>
 
             {/* Live logs */}
@@ -139,11 +163,20 @@ export default function LiveJobsPage() {
               />
             </div>
 
-            {/* AI Plan (shows when plan received) */}
+            {/* AI Plan */}
             {aiPlan && <AIPlanPanel plan={aiPlan} />}
 
-            {/* Generated files (shows when job completes with files) */}
+            {/* Generated files */}
             {aiFiles.length > 0 && <AIFilesPanel files={aiFiles} />}
+
+            {/* Phase 3: Live Preview */}
+            {previewUrl && (
+              <PreviewPanel
+                previewUrl={previewUrl}
+                projectPath={projectPath}
+                gitCommit={gitCommit}
+              />
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-nora-muted text-sm">

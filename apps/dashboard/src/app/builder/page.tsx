@@ -6,6 +6,7 @@ import { LiveResults } from '@/components/LiveResults'
 import { JobList } from '@/components/JobList'
 import { AIPlanPanel } from '@/components/AIPlanPanel'
 import { AIFilesPanel } from '@/components/AIFilesPanel'
+import { PreviewPanel, PhaseBadge } from '@/components/PreviewPanel'
 import { useGlobalFeed } from '@/hooks/useWebSocket'
 import { getJobs, getJob } from '@/lib/api'
 import { Job, WsMessage, AIPlan, AIFile } from '@/types'
@@ -36,6 +37,10 @@ export default function BuilderPage() {
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [aiPlan, setAiPlan] = useState<AIPlan | null>(null)
   const [aiFiles, setAiFiles] = useState<AIFile[]>([])
+  const [phase, setPhase] = useState<string>('')
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [projectPath, setProjectPath] = useState<string>('')
+  const [gitCommit, setGitCommit] = useState<string>('')
 
   const handleWs = useCallback((msg: WsMessage) => {
     if (msg.type === 'job_log') {
@@ -51,18 +56,30 @@ export default function BuilderPage() {
     if (msg.type === 'job_created' || msg.type === 'job_update') {
       getJobs(20).then(setJobs).catch(() => {})
     }
-    // Phase 2: receive AI plan live
     if (msg.type === 'ai_plan' && msg.job_id === activeJobId && msg.plan) {
       setAiPlan(msg.plan)
     }
-    // Phase 2: when job completes, fetch full result for file content
+    // Phase 3: execution phase updates
+    if (msg.type === 'job_phase' && msg.job_id === activeJobId && msg.phase) {
+      setPhase(msg.phase)
+    }
+    // Phase 3: preview ready
+    if (msg.type === 'preview_ready' && msg.job_id === activeJobId) {
+      if (msg.preview_url) setPreviewUrl(msg.preview_url)
+      if (msg.project_path) setProjectPath(msg.project_path)
+      if (msg.git_commit) setGitCommit(msg.git_commit)
+    }
+    // Fetch full result when job completes
     if (
       msg.type === 'job_update' &&
       msg.status === 'completed' &&
       msg.job_id === activeJobId
     ) {
-      getJob(msg.job_id).then((job: Job) => {
+      getJob(msg.job_id!).then((job: Job) => {
         if (job.result?.files) setAiFiles(job.result.files)
+        if (job.result?.preview_url) setPreviewUrl(job.result.preview_url)
+        if (job.result?.project_path) setProjectPath(job.result.project_path)
+        if (job.result?.git_commit) setGitCommit(job.result.git_commit)
       }).catch(() => {})
     }
   }, [activeJobId])
@@ -81,19 +98,25 @@ export default function BuilderPage() {
       setActiveJobId(jobId)
       setAiPlan(null)
       setAiFiles([])
+      setPhase('planning')
+      setPreviewUrl('')
+      setProjectPath('')
+      setGitCommit('')
       getJobs(20).then(setJobs).catch(() => {})
     }
   }
 
   return (
     <div className="flex flex-col h-full p-4 gap-4 overflow-y-auto">
-      <div className="flex items-center gap-2">
+      {/* Header */}
+      <div className="flex items-center gap-2 flex-wrap">
         <Hammer className="w-5 h-5 text-nora-accent" />
         <h1 className="text-lg font-bold text-nora-text">System Builder</h1>
-        <span className="text-xs text-nora-muted">NORA-ARCH + NORA-CODE + AI Phase 2</span>
+        <span className="text-xs text-nora-muted">NORA-ARCH + NORA-CODE + Phase 3</span>
+        {phase && phase !== 'completed' && <PhaseBadge phase={phase} />}
       </div>
 
-      {/* Example prompts — clicking pre-fills the command input */}
+      {/* Example prompts */}
       <div className="flex flex-wrap gap-2">
         {EXAMPLES.map((ex) => (
           <span
@@ -119,12 +142,22 @@ export default function BuilderPage() {
         </div>
       </div>
 
-      {/* AI Plan — shown as soon as the plan is received */}
+      {/* AI Plan */}
       {aiPlan && <AIPlanPanel plan={aiPlan} />}
 
-      {/* Generated Files — shown when job completes */}
+      {/* Generated Files */}
       {aiFiles.length > 0 && <AIFilesPanel files={aiFiles} />}
+
+      {/* Phase 3: Live Preview */}
+      {previewUrl && (
+        <PreviewPanel
+          previewUrl={previewUrl}
+          projectPath={projectPath}
+          gitCommit={gitCommit}
+        />
+      )}
     </div>
   )
 }
+
 
