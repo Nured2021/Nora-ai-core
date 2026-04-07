@@ -12,7 +12,7 @@ from app.schemas.job import CommandInput, JobOut, JobLogOut
 from app.modules.nora_cmd import parse_command
 from app.modules.nora_ops import get_job, update_job_status, get_job_logs, list_jobs
 from app.modules.nora_brain import record_command_history
-from app.modules.nora_human import needs_approval, create_approval_request
+from app.modules.nora_human import create_approval_request
 from app.core.websocket import manager
 
 router = APIRouter(prefix="/api/commands", tags=["commands"])

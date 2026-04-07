@@ -24,10 +24,6 @@ export function useGlobalFeed(onMessage: (msg: WsMessage) => void) {
         } catch {}
       }
 
-      ws.onclose = () => {
-        reconnectTimer = setTimeout(connect, 3000)
-      }
-
       ws.onerror = () => {
         ws.close()
       }

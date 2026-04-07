@@ -40,8 +40,9 @@ def parse_command(input_text: str) -> Tuple[str, str, Optional[str]]:
         if re.search(pattern, text, re.IGNORECASE):
             return "/build", text, None
 
-    # Status question
-    if re.search(r"status.*(job|#)", text, re.IGNORECASE):
+    # Status question — use linear regex (no .* backtracking on user input)
+    lower_text = text.lower()
+    if lower_text.startswith("status") or ("status" in lower_text and ("job" in lower_text or "#" in lower_text)):
         match = re.search(r"(JOB-\w+|#(\d+)|\b(\d+)\b)", text)
         job_id = match.group(1).lstrip("#") if match else None
         return "/status", text, job_id

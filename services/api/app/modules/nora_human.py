@@ -11,11 +11,12 @@ from app.models.approval import ApprovalRequest
 
 
 APPROVAL_TIMEOUT_MINUTES = 30
-REQUIRES_APPROVAL = ["/deploy"]
+# Commands that require HumanLoop approval before execution
+REQUIRES_APPROVAL_COMMANDS = ["/deploy"]
 
 
 def needs_approval(command: str) -> bool:
-    return command in REQUIRES_APPROVAL
+    return command in REQUIRES_APPROVAL_COMMANDS
 
 
 async def create_approval_request(
