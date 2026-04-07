@@ -7,6 +7,7 @@ import clsx from 'clsx'
 
 interface Props {
   onResult?: (result: Record<string, unknown>) => void
+  fillValue?: string
 }
 
 const HELP_TEXT = `
@@ -22,12 +23,20 @@ Or just type naturally:
   "create a REST API with FastAPI"
 `.trim()
 
-export function CommandInput({ onResult }: Props) {
+export function CommandInput({ onResult, fillValue }: Props) {
   const [value, setValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState<string[]>([])
   const [histIdx, setHistIdx] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Fill input when parent passes a fillValue (e.g. example chip click)
+  useEffect(() => {
+    if (fillValue) {
+      setValue(fillValue)
+      inputRef.current?.focus()
+    }
+  }, [fillValue])
 
   const submit = async () => {
     const text = value.trim()

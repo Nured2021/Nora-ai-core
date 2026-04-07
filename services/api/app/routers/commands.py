@@ -99,9 +99,9 @@ async def dispatch_command(
             "message": "Deploy requires HumanLoop approval",
         }
 
-    # /build or chat build → queue job
+    # /build or chat build → queue AI build job (Phase 2: NORA-ARCH + NORA-CODE)
     if command in ("/build", "chat"):
-        from app.worker_client import dispatch_build_job
+        from app.worker_client import dispatch_ai_build_job
         job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
         job = Job(
             job_id=job_id,
@@ -113,8 +113,8 @@ async def dispatch_command(
         db.add(job)
         await db.flush()
 
-        # Dispatch async task (no-stop: runs even if browser closes)
-        celery_task_id = dispatch_build_job(job_id, body.input_text, current_user.id)
+        # Dispatch AI build task (no-stop: runs even if browser closes)
+        celery_task_id = dispatch_ai_build_job(job_id, body.input_text, current_user.id)
         await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
 
         await manager.broadcast(job_id, {

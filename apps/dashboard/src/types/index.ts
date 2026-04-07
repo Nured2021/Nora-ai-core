@@ -5,11 +5,32 @@ export interface Job {
   input_text: string
   status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'awaiting_approval'
   celery_task_id?: string
-  result?: Record<string, unknown>
+  result?: JobResult
   error?: string
   created_at: string
   started_at?: string
   completed_at?: string
+}
+
+export interface JobResult {
+  plan?: AIPlan
+  files?: AIFile[]
+  files_created?: string[]
+  input?: string
+  // legacy simulation fields
+  tests_passed?: number
+}
+
+export interface AIPlan {
+  name: string
+  stack: string[]
+  steps: string[]
+  files: string[]
+}
+
+export interface AIFile {
+  path: string
+  content: string
 }
 
 export interface JobLog {
@@ -57,4 +78,7 @@ export interface WsMessage {
   request_id?: string
   action?: string
   details?: string
+  // Phase 2: AI plan/files broadcast
+  plan?: AIPlan
+  file_paths?: string[]
 }

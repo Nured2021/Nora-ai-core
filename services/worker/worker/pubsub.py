@@ -31,3 +31,23 @@ def publish_status(job_id: str, status: str, message: str = ""):
         "message": message,
     }
     _redis.publish(WS_CHANNEL, json.dumps(event))
+
+
+def publish_plan(job_id: str, plan: dict):
+    """Broadcast the AI-generated plan to the dashboard in real-time."""
+    event = {
+        "type": "ai_plan",
+        "job_id": job_id,
+        "plan": plan,
+    }
+    _redis.publish(WS_CHANNEL, json.dumps(event))
+
+
+def publish_files(job_id: str, file_paths: list):
+    """Broadcast the list of generated file paths to the dashboard."""
+    event = {
+        "type": "ai_files",
+        "job_id": job_id,
+        "file_paths": file_paths,
+    }
+    _redis.publish(WS_CHANNEL, json.dumps(event))

@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { JobList } from '@/components/JobList'
 import { LiveResults } from '@/components/LiveResults'
-import { useGlobalFeed, useJobFeed } from '@/hooks/useWebSocket'
-import { getJobs, getJobLogs } from '@/lib/api'
-import { Job, JobLog, WsMessage } from '@/types'
+import { AIPlanPanel } from '@/components/AIPlanPanel'
+import { AIFilesPanel } from '@/components/AIFilesPanel'
+import { useGlobalFeed } from '@/hooks/useWebSocket'
+import { getJobs, getJob, getJobLogs } from '@/lib/api'
+import { Job, JobLog, WsMessage, AIPlan, AIFile } from '@/types'
 import { RefreshCw } from 'lucide-react'
 
 interface LogEntry {
@@ -22,6 +24,8 @@ export default function LiveJobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [aiPlan, setAiPlan] = useState<AIPlan | null>(null)
+  const [aiFiles, setAiFiles] = useState<AIFile[]>([])
 
   const fetchJobs = useCallback(() => {
     setLoading(true)
@@ -33,6 +37,8 @@ export default function LiveJobsPage() {
   const handleSelect = async (job: Job) => {
     setSelectedJob(job)
     setLogs([])
+    setAiPlan(null)
+    setAiFiles([])
     try {
       const entries: JobLog[] = await getJobLogs(job.job_id)
       setLogs(entries.map((e) => ({
@@ -43,6 +49,12 @@ export default function LiveJobsPage() {
         created_at: e.created_at,
         job_id: e.job_id,
       })))
+    } catch {}
+    // Fetch full job detail to get AI plan + files from result
+    try {
+      const fullJob: Job = await getJob(job.job_id)
+      if (fullJob.result?.plan) setAiPlan(fullJob.result.plan)
+      if (fullJob.result?.files) setAiFiles(fullJob.result.files)
     } catch {}
   }
 
@@ -57,6 +69,22 @@ export default function LiveJobsPage() {
         job_id: msg.job_id,
       }])
     }
+    // Phase 2: live plan broadcast
+    if (msg.type === 'ai_plan' && selectedJob && msg.job_id === selectedJob.job_id && msg.plan) {
+      setAiPlan(msg.plan)
+    }
+    // Phase 2: fetch files when job completes
+    if (
+      msg.type === 'job_update' &&
+      msg.status === 'completed' &&
+      selectedJob &&
+      msg.job_id === selectedJob.job_id
+    ) {
+      getJob(msg.job_id!).then((job: Job) => {
+        if (job.result?.files) setAiFiles(job.result.files)
+        setSelectedJob(job)
+      }).catch(() => {})
+    }
     if (msg.type === 'job_update' || msg.type === 'job_created') {
       fetchJobs()
     }
@@ -65,7 +93,7 @@ export default function LiveJobsPage() {
   useGlobalFeed(handleWs)
 
   return (
-    <div className="flex h-full p-4 gap-4">
+    <div className="flex h-full p-4 gap-4 overflow-hidden">
       {/* Job list */}
       <div className="w-80 shrink-0 flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -86,11 +114,12 @@ export default function LiveJobsPage() {
         </div>
       </div>
 
-      {/* Log viewer */}
-      <div className="flex-1 min-h-0 flex flex-col gap-3">
+      {/* Detail panel */}
+      <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto">
         {selectedJob ? (
           <>
-            <div className="flex items-center gap-2">
+            {/* Job header */}
+            <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs font-mono text-nora-accent">{selectedJob.job_id}</span>
               <span className="text-xs text-nora-muted">{selectedJob.command}</span>
               <span className="text-xs text-nora-text truncate flex-1">{selectedJob.input_text}</span>
@@ -101,12 +130,20 @@ export default function LiveJobsPage() {
                 'text-nora-muted'
               }`}>{selectedJob.status}</span>
             </div>
-            <div className="flex-1 min-h-0">
+
+            {/* Live logs */}
+            <div className="shrink-0" style={{ height: '220px' }}>
               <LiveResults
                 logs={logs}
                 title={`LOGS — ${selectedJob.job_id}`}
               />
             </div>
+
+            {/* AI Plan (shows when plan received) */}
+            {aiPlan && <AIPlanPanel plan={aiPlan} />}
+
+            {/* Generated files (shows when job completes with files) */}
+            {aiFiles.length > 0 && <AIFilesPanel files={aiFiles} />}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-nora-muted text-sm">

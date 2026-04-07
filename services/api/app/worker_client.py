@@ -26,8 +26,19 @@ celery_app.conf.update(
 
 
 def dispatch_build_job(job_id: str, input_text: str, user_id: int) -> str:
+    """Dispatch legacy simulated build (used by tactics)."""
     result = celery_app.send_task(
         "worker.tasks.build.run_build",
+        args=[job_id, input_text, user_id],
+        queue="default",
+    )
+    return result.id
+
+
+def dispatch_ai_build_job(job_id: str, input_text: str, user_id: int) -> str:
+    """Dispatch Phase 2 AI build (NORA-ARCH + NORA-CODE)."""
+    result = celery_app.send_task(
+        "worker.tasks.ai_build.run_ai_build",
         args=[job_id, input_text, user_id],
         queue="default",
     )
