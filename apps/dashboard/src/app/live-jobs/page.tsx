@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { JobList } from '@/components/JobList'
 import { LiveResults } from '@/components/LiveResults'
-import { AIPlanPanel } from '@/components/AIPlanPanel'
-import { AIFilesPanel } from '@/components/AIFilesPanel'
 import { PreviewPanel, PhaseBadge } from '@/components/PreviewPanel'
 import { useGlobalFeed } from '@/hooks/useWebSocket'
 import { getJobs, getJob, getJobLogs } from '@/lib/api'
-import { Job, JobLog, WsMessage, AIPlan, AIFile } from '@/types'
+import { Job, JobLog, WsMessage } from '@/types'
 import { RefreshCw } from 'lucide-react'
 
 interface LogEntry {
@@ -25,8 +23,6 @@ export default function LiveJobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(false)
-  const [aiPlan, setAiPlan] = useState<AIPlan | null>(null)
-  const [aiFiles, setAiFiles] = useState<AIFile[]>([])
   const [phase, setPhase] = useState<string>('')
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [projectPath, setProjectPath] = useState<string>('')
@@ -42,8 +38,6 @@ export default function LiveJobsPage() {
   const handleSelect = async (job: Job) => {
     setSelectedJob(job)
     setLogs([])
-    setAiPlan(null)
-    setAiFiles([])
     setPhase('')
     setPreviewUrl('')
     setProjectPath('')
@@ -59,14 +53,11 @@ export default function LiveJobsPage() {
         job_id: e.job_id,
       })))
     } catch {}
-    // Fetch full job for AI plan + Phase 3 results
     try {
       const fullJob: Job = await getJob(job.job_id)
-      if (fullJob.result?.plan) setAiPlan(fullJob.result.plan)
-      if (fullJob.result?.files) setAiFiles(fullJob.result.files)
-      if (fullJob.result?.preview_url) setPreviewUrl(fullJob.result.preview_url)
-      if (fullJob.result?.project_path) setProjectPath(fullJob.result.project_path)
-      if (fullJob.result?.git_commit) setGitCommit(fullJob.result.git_commit)
+      if (fullJob.result?.preview_url) setPreviewUrl(String(fullJob.result.preview_url))
+      if (fullJob.result?.project_path) setProjectPath(String(fullJob.result.project_path))
+      if (fullJob.result?.git_commit) setGitCommit(String(fullJob.result.git_commit))
     } catch {}
   }
 
@@ -81,14 +72,9 @@ export default function LiveJobsPage() {
         job_id: msg.job_id,
       }])
     }
-    if (msg.type === 'ai_plan' && selectedJob && msg.job_id === selectedJob.job_id && msg.plan) {
-      setAiPlan(msg.plan)
-    }
-    // Phase 3: phase updates
     if (msg.type === 'job_phase' && selectedJob && msg.job_id === selectedJob.job_id && msg.phase) {
       setPhase(msg.phase)
     }
-    // Phase 3: preview ready
     if (msg.type === 'preview_ready' && selectedJob && msg.job_id === selectedJob.job_id) {
       if (msg.preview_url) setPreviewUrl(msg.preview_url)
       if (msg.project_path) setProjectPath(msg.project_path)
@@ -101,10 +87,9 @@ export default function LiveJobsPage() {
       msg.job_id === selectedJob.job_id
     ) {
       getJob(msg.job_id!).then((job: Job) => {
-        if (job.result?.files) setAiFiles(job.result.files)
-        if (job.result?.preview_url) setPreviewUrl(job.result.preview_url)
-        if (job.result?.project_path) setProjectPath(job.result.project_path)
-        if (job.result?.git_commit) setGitCommit(job.result.git_commit)
+        if (job.result?.preview_url) setPreviewUrl(String(job.result.preview_url))
+        if (job.result?.project_path) setProjectPath(String(job.result.project_path))
+        if (job.result?.git_commit) setGitCommit(String(job.result.git_commit))
         setSelectedJob(job)
       }).catch(() => {})
     }
@@ -121,19 +106,12 @@ export default function LiveJobsPage() {
       <div className="w-80 shrink-0 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-nora-text">LIVE JOBS</h2>
-          <button
-            onClick={fetchJobs}
-            className="text-nora-muted hover:text-nora-text transition-colors"
-          >
+          <button onClick={fetchJobs} className="text-nora-muted hover:text-nora-text transition-colors">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <JobList
-            jobs={jobs}
-            selectedJobId={selectedJob?.job_id}
-            onSelect={handleSelect}
-          />
+          <JobList jobs={jobs} selectedJobId={selectedJob?.job_id} onSelect={handleSelect} />
         </div>
       </div>
 
@@ -147,9 +125,9 @@ export default function LiveJobsPage() {
               <span className="text-xs text-nora-muted">{selectedJob.command}</span>
               <span className="text-xs text-nora-text truncate flex-1">{selectedJob.input_text}</span>
               <span className={`text-xs font-mono ${
-                selectedJob.status === 'running' ? 'text-nora-accent animate-pulse' :
+                selectedJob.status === 'running'   ? 'text-nora-accent animate-pulse' :
                 selectedJob.status === 'completed' ? 'text-nora-success' :
-                selectedJob.status === 'failed' ? 'text-nora-error' :
+                selectedJob.status === 'failed'    ? 'text-nora-error' :
                 'text-nora-muted'
               }`}>{selectedJob.status}</span>
               {phase && phase !== 'completed' && <PhaseBadge phase={phase} />}
@@ -157,19 +135,10 @@ export default function LiveJobsPage() {
 
             {/* Live logs */}
             <div className="shrink-0" style={{ height: '220px' }}>
-              <LiveResults
-                logs={logs}
-                title={`LOGS — ${selectedJob.job_id}`}
-              />
+              <LiveResults logs={logs} title={`LOGS — ${selectedJob.job_id}`} />
             </div>
 
-            {/* AI Plan */}
-            {aiPlan && <AIPlanPanel plan={aiPlan} />}
-
-            {/* Generated files */}
-            {aiFiles.length > 0 && <AIFilesPanel files={aiFiles} />}
-
-            {/* Phase 3: Live Preview */}
+            {/* Preview panel — shows URL from job result, probes reachability, no hardcoded port */}
             {previewUrl && (
               <PreviewPanel
                 previewUrl={previewUrl}

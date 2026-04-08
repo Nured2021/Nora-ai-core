@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { CommandInput } from '@/components/CommandInput'
 import { LiveResults } from '@/components/LiveResults'
 import { JobList } from '@/components/JobList'
+import { BuildEnginePanel } from '@/components/BuildEnginePanel'
 import { useGlobalFeed } from '@/hooks/useWebSocket'
 import { getJobs } from '@/lib/api'
 import { Job, WsMessage } from '@/types'
@@ -88,8 +89,9 @@ export default function BuilderPage() {
 
       <CommandInput onResult={handleResult} fillValue={fillValue} />
 
-      {/* Live logs + job list */}
+      {/* Build engine (left) + Live logs (center) + Job list (right) */}
       <div className="flex gap-4 flex-1 min-h-0" style={{ minHeight: '200px' }}>
+        <BuildEnginePanel logs={logs} jobs={jobs} activeJobId={activeJobId} />
         <div className="flex-1 min-h-0">
           <LiveResults logs={logs} showJobId />
         </div>

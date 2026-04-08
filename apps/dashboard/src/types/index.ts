@@ -84,4 +84,8 @@ export interface WsMessage {
   request_id?: string
   action?: string
   details?: string
+  phase?: string
+  preview_url?: string
+  project_path?: string
+  git_commit?: string
 }

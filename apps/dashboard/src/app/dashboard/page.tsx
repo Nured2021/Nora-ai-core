@@ -4,12 +4,12 @@ import { useState, useCallback, useEffect } from 'react'
 import { CommandInput } from '@/components/CommandInput'
 import { LiveResults } from '@/components/LiveResults'
 import { JobList } from '@/components/JobList'
-import { DeployPanel } from '@/components/DeployPanel'
+import { BuildEnginePanel } from '@/components/BuildEnginePanel'
 import { useGlobalFeed } from '@/hooks/useWebSocket'
 import { getJobs } from '@/lib/api'
 import { Job, WsMessage } from '@/types'
 import { useAuthStore } from '@/lib/auth-store'
-import { Activity, Zap, CheckCircle2, XCircle, Clock, Rocket } from 'lucide-react'
+import { Activity, Zap, CheckCircle2, XCircle, Clock } from 'lucide-react'
 
 interface LogEntry {
   id: string
@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
-  const [deployRefresh, setDeployRefresh] = useState(0)
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
 
   useEffect(() => {
     getJobs(20).then(setJobs).catch(() => {})
@@ -48,22 +48,6 @@ export default function DashboardPage() {
     if (msg.type === 'job_created' || msg.type === 'job_update') {
       getJobs(20).then(setJobs).catch(() => {})
     }
-    // Phase 4: refresh deploy panel when a deployment changes
-    if (msg.type === 'deploy_ready' || msg.type === 'deploy_failed' || msg.type === 'deploy_started') {
-      setDeployRefresh((n) => n + 1)
-      if (msg.type === 'deploy_ready' && msg.public_url) {
-        setLogs((prev) => [
-          ...prev,
-          {
-            id: `dep-${Date.now()}`,
-            message: `🚀 Deployment live: ${msg.public_url}`,
-            level: 'SUCCESS',
-            created_at: new Date().toISOString(),
-            job_id: msg.job_id,
-          },
-        ])
-      }
-    }
   }, [])
 
   useGlobalFeed(handleWsMessage)
@@ -78,16 +62,14 @@ export default function DashboardPage() {
     setLogs((prev) => [...prev, logEntry])
     if (result.type === 'job_created' || result.type === 'approval_required') {
       getJobs(20).then(setJobs).catch(() => {})
-    }
-    if (result.type === 'deploy_started') {
-      setDeployRefresh((n) => n + 1)
+      if (result.job_id) setActiveJobId(result.job_id as string)
     }
   }
 
-  const running = jobs.filter((j) => j.status === 'running').length
+  const running   = jobs.filter((j) => j.status === 'running').length
   const completed = jobs.filter((j) => j.status === 'completed').length
-  const failed = jobs.filter((j) => j.status === 'failed').length
-  const queued = jobs.filter((j) => j.status === 'queued').length
+  const failed    = jobs.filter((j) => j.status === 'failed').length
+  const queued    = jobs.filter((j) => j.status === 'queued').length
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
@@ -97,41 +79,35 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold text-nora-text">
             Welcome back, <span className="text-nora-accent">{user?.username}</span>
           </h1>
-          <p className="text-sm text-nora-muted">NORA AI Phase 4 — Deployment & Public Access Active</p>
+          <p className="text-sm text-nora-muted">NORA AI Phase 1 — Core System Active</p>
         </div>
         <div className="flex gap-3">
-          <Stat icon={<Activity className="w-4 h-4 text-nora-accent" />} label="Running" value={running} color="text-nora-accent" />
-          <Stat icon={<Clock className="w-4 h-4 text-nora-muted" />} label="Queued" value={queued} color="text-nora-muted" />
-          <Stat icon={<CheckCircle2 className="w-4 h-4 text-nora-success" />} label="Done" value={completed} color="text-nora-success" />
-          <Stat icon={<XCircle className="w-4 h-4 text-nora-error" />} label="Failed" value={failed} color="text-nora-error" />
+          <Stat icon={<Activity className="w-4 h-4 text-nora-accent" />}   label="Running"  value={running}   color="text-nora-accent" />
+          <Stat icon={<Clock className="w-4 h-4 text-nora-muted" />}       label="Queued"   value={queued}    color="text-nora-muted" />
+          <Stat icon={<CheckCircle2 className="w-4 h-4 text-nora-success" />} label="Done"  value={completed} color="text-nora-success" />
+          <Stat icon={<XCircle className="w-4 h-4 text-nora-error" />}     label="Failed"   value={failed}    color="text-nora-error" />
         </div>
       </div>
 
       {/* Command input */}
       <CommandInput onResult={handleCommandResult} />
 
-      {/* Live results + jobs + deployments */}
+      {/* Build engine panel (left) + Live results (center) + Jobs (right) */}
       <div className="flex gap-4 flex-1 min-h-0">
-        {/* Live results */}
+        {/* Left: live build engine */}
+        <BuildEnginePanel logs={logs} jobs={jobs} activeJobId={activeJobId} />
+
+        {/* Center: live log stream */}
         <div className="flex-1 min-h-0">
           <LiveResults logs={logs} showJobId />
         </div>
 
-        {/* Right panel: jobs + deployments */}
-        <div className="w-72 shrink-0 overflow-y-auto flex flex-col gap-4">
-          <div>
-            <div className="text-xs font-medium text-nora-muted mb-2 flex items-center gap-1">
-              <Zap className="w-3 h-3" /> RECENT JOBS
-            </div>
-            <JobList jobs={jobs.slice(0, 10)} selectedJobId={selectedJob?.job_id} onSelect={setSelectedJob} />
+        {/* Right: recent jobs */}
+        <div className="w-60 shrink-0 overflow-y-auto">
+          <div className="text-xs font-medium text-nora-muted mb-2 flex items-center gap-1">
+            <Zap className="w-3 h-3" /> RECENT JOBS
           </div>
-
-          <div>
-            <div className="text-xs font-medium text-nora-muted mb-2 flex items-center gap-1">
-              <Rocket className="w-3 h-3" /> DEPLOYMENTS
-            </div>
-            <DeployPanel refreshTrigger={deployRefresh} />
-          </div>
+          <JobList jobs={jobs.slice(0, 10)} selectedJobId={selectedJob?.job_id} onSelect={setSelectedJob} />
         </div>
       </div>
     </div>
