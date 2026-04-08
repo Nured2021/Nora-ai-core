@@ -7,11 +7,14 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.models.user import User
 from app.models.job import Job
+from app.models.brain import Tactic
 from app.schemas.job import CommandInput, JobOut
+from app.schemas.brain import TacticOut
 from app.modules.nora_cmd import parse_command
 from app.modules.nora_ops import get_job, update_job_status, list_jobs
 from app.modules.nora_brain import record_command_history
 from app.modules.nora_human import create_approval_request
+from app.modules.nora_chat import generate_response, HELP_TEXT
 from app.core.websocket import manager
 from app.worker_client import celery_app, dispatch_build_job
 
@@ -27,6 +30,58 @@ async def dispatch_command(
     command, cleaned_input, job_id_hint = parse_command(body.input_text)
 
     await record_command_history(db, current_user.id, command, body.input_text)
+
+    # /help — show available commands
+    if command == "/help":
+        return {"type": "help", "message": HELP_TEXT}
+
+    # /tactic — run a saved tactic, or list all tactics
+    if command == "/tactic":
+        tactic_name = cleaned_input.strip().lower()
+        if not tactic_name:
+            # List all tactics
+            result = await db.execute(select(Tactic).order_by(Tactic.name))
+            tactics = result.scalars().all()
+            return {
+                "type": "tactics_list",
+                "tactics": [TacticOut.model_validate(t).model_dump() for t in tactics],
+                "message": f"{len(tactics)} tactics available. Use /tactic <name> to run one.",
+            }
+        # Look up by name
+        result = await db.execute(select(Tactic).where(Tactic.name == tactic_name))
+        tactic = result.scalar_one_or_none()
+        if not tactic:
+            return {"type": "error", "message": f"Tactic '{tactic_name}' not found. Use /tactic to list all."}
+        tactic.run_count += 1
+        job_ids: list[str] = []
+        for step in tactic.steps:
+            step_job_id = f"JOB-{uuid.uuid4().hex[:8].upper()}"
+            step_job = Job(
+                job_id=step_job_id,
+                user_id=current_user.id,
+                command="/build",
+                input_text=str(step),
+                status="queued",
+            )
+            db.add(step_job)
+            await db.flush()
+            celery_task_id = dispatch_build_job(step_job_id, str(step), current_user.id)
+            await update_job_status(db, step_job_id, "queued", celery_task_id=celery_task_id)
+            job_ids.append(step_job_id)
+            await manager.broadcast(step_job_id, {
+                "type": "job_created",
+                "job_id": step_job_id,
+                "command": "/build",
+                "input_text": str(step),
+                "status": "queued",
+                "tactic": tactic.name,
+            })
+        return {
+            "type": "tactic_running",
+            "tactic": tactic.name,
+            "job_ids": job_ids,
+            "message": generate_response("tactic_running", tactic.name),
+        }
 
     # /status — show job status
     if command == "/status":
