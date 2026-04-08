@@ -12,7 +12,12 @@ from app.schemas.job import CommandInput, JobOut
 from app.schemas.brain import TacticOut
 from app.modules.nora_cmd import parse_command
 from app.modules.nora_ops import get_job, update_job_status, list_jobs
-from app.modules.nora_brain import record_command_history
+from app.modules.nora_brain import (
+    record_command_history,
+    record_code_pattern,
+    record_system_state,
+    record_deploy_target,
+)
 from app.modules.nora_human import create_approval_request
 from app.modules.nora_chat import generate_response, HELP_TEXT
 from app.core.websocket import manager
@@ -128,6 +133,10 @@ async def dispatch_command(
             db=db, job_id=job_id, requested_by_id=current_user.id,
             action="DEPLOY", details=body.input_text,
         )
+        # Layer 6: Deployment Target Memory
+        await record_deploy_target(db, current_user.id, body.input_text)
+        # Layer 4: System State Tracking
+        await record_system_state(db, current_user.id, job_id, "awaiting_approval")
         await manager.broadcast(job_id, {
             "type": "approval_required", "job_id": job_id,
             "request_id": approval.request_id, "action": "DEPLOY", "details": body.input_text,
@@ -148,6 +157,10 @@ async def dispatch_command(
         await db.flush()
         celery_task_id = dispatch_build_job(job_id, body.input_text, current_user.id)
         await update_job_status(db, job_id, "queued", celery_task_id=celery_task_id)
+        # Layer 2: Code Pattern Recognition — record what kind of build was requested
+        await record_code_pattern(db, current_user.id, body.input_text, [])
+        # Layer 4: System State Tracking — record job queued
+        await record_system_state(db, current_user.id, job_id, "queued")
         await manager.broadcast(job_id, {
             "type": "job_created", "job_id": job_id,
             "command": "/build", "input_text": body.input_text, "status": "queued",

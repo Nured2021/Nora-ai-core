@@ -12,6 +12,7 @@ from app.modules.nora_human import (
     get_pending_approvals,
     get_approval,
 )
+from app.modules.nora_brain import record_humanloop_feedback, record_realtime_feedback
 from app.core.websocket import manager
 
 router = APIRouter(prefix="/api/humanloop", tags=["humanloop"])
@@ -62,6 +63,11 @@ async def decide(
     if not req:
         raise HTTPException(status_code=404, detail="Approval request not found")
 
+    # Layer 5: HumanLoop Feedback Storage — record every decision
+    await record_humanloop_feedback(
+        db, current_user.id, req.action, body.decision, body.note
+    )
+
     # If approved, proceed with the job (trigger worker)
     if body.decision == "approved" and req.job_id:
         from app.worker_client import dispatch_deploy_job
@@ -70,6 +76,11 @@ async def decide(
         if job:
             celery_task_id = dispatch_deploy_job(req.job_id, job.input_text, job.user_id)
             await update_job_status(db, req.job_id, "queued", celery_task_id=celery_task_id)
+            # Layer 10: Real-Time Feedback Loop — deployment approved and queued
+            await record_realtime_feedback(
+                db, current_user.id, req.job_id,
+                f"Deployment approved by {current_user.username} and queued",
+            )
             await manager.broadcast(req.job_id, {
                 "type": "job_approved",
                 "job_id": req.job_id,
@@ -81,6 +92,11 @@ async def decide(
     if body.decision == "rejected" and req.job_id:
         from app.modules.nora_ops import update_job_status
         await update_job_status(db, req.job_id, "cancelled", error="Rejected by HumanLoop")
+        # Layer 10: Real-Time Feedback Loop — deployment rejected
+        await record_realtime_feedback(
+            db, current_user.id, req.job_id,
+            f"Deployment rejected by {current_user.username}",
+        )
         await manager.broadcast(req.job_id, {
             "type": "job_rejected",
             "job_id": req.job_id,

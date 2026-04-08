@@ -118,3 +118,48 @@ async def record_error_recovery(db: AsyncSession, user_id: int, error: str, reco
     key = f"err_{datetime.now(timezone.utc).isoformat()}"
     value = json.dumps({"error": error, "recovery": recovery})
     await store_memory(db, user_id, 7, key, value)
+
+
+# Layer 2 — Code Pattern Recognition
+async def record_code_pattern(db: AsyncSession, user_id: int, input_text: str, files: list):
+    import json
+    from datetime import datetime, timezone
+    key = f"pattern_{datetime.now(timezone.utc).isoformat()}"
+    value = json.dumps({"input": input_text, "files": files[:10]})
+    await store_memory(db, user_id, 2, key, value)
+
+
+# Layer 4 — System State Tracking
+async def record_system_state(db: AsyncSession, user_id: int, job_id: str, status: str):
+    import json
+    from datetime import datetime, timezone
+    key = f"state_{datetime.now(timezone.utc).isoformat()}"
+    value = json.dumps({"job_id": job_id, "status": status})
+    await store_memory(db, user_id, 4, key, value)
+
+
+# Layer 5 — HumanLoop Feedback Storage
+async def record_humanloop_feedback(db: AsyncSession, user_id: int, action: str, decision: str, note: Optional[str] = None):
+    import json
+    from datetime import datetime, timezone
+    key = f"hl_{datetime.now(timezone.utc).isoformat()}"
+    value = json.dumps({"action": action, "decision": decision, "note": note})
+    await store_memory(db, user_id, 5, key, value)
+
+
+# Layer 6 — Deployment Target Memory
+async def record_deploy_target(db: AsyncSession, user_id: int, target_text: str):
+    import json
+    from datetime import datetime, timezone
+    key = f"deploy_{datetime.now(timezone.utc).isoformat()}"
+    value = json.dumps({"target": target_text})
+    await store_memory(db, user_id, 6, key, value)
+
+
+# Layer 10 — Real-Time Feedback Loop
+async def record_realtime_feedback(db: AsyncSession, user_id: int, job_id: str, result_summary: str):
+    import json
+    from datetime import datetime, timezone
+    key = f"rtfb_{datetime.now(timezone.utc).isoformat()}"
+    value = json.dumps({"job_id": job_id, "summary": result_summary})
+    await store_memory(db, user_id, 10, key, value)
