@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import init_db
+import app.models  # ensure all SQLAlchemy models are registered before create_all
 from app.routers import auth, commands, jobs, humanloop, users, brain, websocket
 from app.seed import seed
 from app.core.pubsub import listen_and_forward
