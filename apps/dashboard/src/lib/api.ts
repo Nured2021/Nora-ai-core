@@ -7,6 +7,7 @@ export const api = axios.create({ baseURL: API_URL })
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
+    || (typeof window !== 'undefined' ? localStorage.getItem('nora_token') : null)
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
