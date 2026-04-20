@@ -1,0 +1,35 @@
+"""
+Celery worker client — dispatches tasks to the queue.
+Jobs run on the worker server even if browser closes (no-stop).
+"""
+from celery import Celery
+from app.core.config import settings
+
+celery_app = Celery(
+    "nora_worker",
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
+)
+celery_app.conf.update(
+    task_serializer="json",
+    result_serializer="json",
+    accept_content=["json"],
+    timezone="UTC",
+    enable_utc=True,
+    task_track_started=True,
+    worker_send_task_events=True,
+    task_send_sent_event=True,
+    # No-stop: tasks never expire
+    task_time_limit=None,
+    task_soft_time_limit=None,
+)
+
+
+def dispatch_build_job(job_id: str, input_text: str, user_id: int) -> str:
+    """Dispatch NORA-BUILDER build task (no-stop queue)."""
+    result = celery_app.send_task(
+        "worker.tasks.build.run_build",
+        args=[job_id, input_text, user_id],
+        queue="default",
+    )
+    return result.id

@@ -1,0 +1,142 @@
+NORA AI SYSTEM BLUEPRINT – PHASE 1 COMPLETE
+COPYABLE · CLEAN · NO OMISSIONS
+PDF DIAGRAMS SAVED (8 IMAGES FROM YOUR FILE)
+Diagram Content
+[66,17,439,199] System Flow
+[60,203,439,394] AI Engine Pipeline
+[60,404,447,590] Brain Connect Layers
+[60,600,447,789] HumanLoop
+[60,808,447,986] System Builder
+[586,17,881,199] Dashboard Layout
+[686,209,881,324] Multi-User
+[686,333,881,394] No-Stop Queue
+WHAT NORA IS
+NORA = 50 AI + 50 Brain Connect + Orchestrator + HumanLoop + System Builder.
+User gives commands like a pilot. NORA shows results live. NORA never stops jobs. User
+can chat and build by writing. Everything NORA does is visible. Real tactics. Real building.
+Real execution.
+PHASE 1 – COMPLETE SPECIFICATION
+1. THE 10 CORE AI MODULES
+# Name What It Does
+1 NORA-CMD Reads pilot commands: /deploy, /stop, /status, /build
+2 NORA-CHAT Talks to user. Can build from conversation
+3 NORA-CODE Writes code: React, Python, SQL, Go
+4 NORA-ARCH Designs systems: frontend, backend, database, queues
+5 NORA-DEPLOY Deploys to AWS, GCP, Azure
+6 NORA-TEST Creates and runs tests
+7 NORA-BRAIN Remembers everything. Learns from user
+8 NORA-HUMAN Asks user for approval. Takes corrections
+9 NORA-OPS Watches jobs. Fixes failures. Never stops
+10 NORA-BUILDER Builds apps, software, systems, and new NORA modules
+2. THE 10 BRAIN CONNECT LAYERS
+Layer Function
+1 Command History Memory
+Layer Function
+2 Code Pattern Recognition
+3 User Preference Learning
+4 System State Tracking
+5 HumanLoop Feedback Storage
+6 Deployment Target Memory
+7 Error Recovery Tactics
+8 Multi-User Role Mapping
+9 Builder Template Library
+10 Real-Time Feedback Loop
+Scales to 50 layers in future phases.
+3. DASHBOARD WITH SIDEBAR
+text
+┌─────────────────────┬────────────────────────────────────────────┐
+│ SIDEBAR             │ MAIN AREA                                  │
+│                     │                                            │
+│ ┌───────────────┐   │ ┌──────────────────────────────────────┐   │
+│ │ DASHBOARD     │   │ │ COMMAND INPUT                        │   │
+│ │ LIVE JOBS     │   │ │ > user: build me a CRM with chat     │   │
+│ │ BUILDER       │   │ └──────────────────────────────────────┘   │
+│ │ BRAIN CONNECT │   │                                            │
+│ │ HUMANLOOP     │   │ ┌──────────────────────────────────────┐   │
+│ │ MULTI-USER    │   │ │ LIVE RESULTS                         │   │
+│ │ - WorkspaceA  │   │ │ [JOB #001] Building CRM...           │   │
+│ │ - WorkspaceB  │   │ │ → Created frontend/                  │   │
+│ │ TACTICS LIB   │   │ │ → Created backend/                   │   │
+│ │ SETTINGS      │   │ │ → Created database/                  │   │
+│ └───────────────┘   │ │ → Running tests... PASSED            │   │
+│                     │ │ → Deploying... LIVE                  │   │
+│                     │ │                                      │   │
+│                     │ │ ┌────────────────────────────────┐   │   │
+│                     │ │ │ CHAT / BUILD                   │   │   │
+│                     │ │ │ NORA: I added user login too   │   │   │
+│                     │ │ └────────────────────────────────┘   │   │
+└─────────────────────┴────────────────────────────────────────────┘
+4. HOW USER OPERATES (PILOT MODE)
+User writes one input. NORA understands:
+Input Type Example What NORA Does
+Build command "build a todo app" Starts building. Shows every step.
+Pilot command "/deploy to production" Deploys immediately
+Question "what is the status of job #42?" Shows live status
+Input Type Example What NORA Does
+Correction "change the button to red" Updates running job
+Chat "can you add search?" Adds feature while job runs
+NO STOPPING – User sends next command while previous job still running. Both work.
+5. NO-STOP QUEUE
+Jobs run forever until user cancels. Queue system:
+- Redis + Celery backend
+- Jobs survive browser close
+- Jobs survive API restart (persistent queue)
+- User can cancel with /stop <job_id>
+- Multiple jobs run in parallel
+6. LIVE STREAMING
+WebSocket-based live log streaming:
+- Every job step broadcasts via WebSocket
+- Dashboard subscribes per job or global feed
+- Logs stored in DB for replay
+- Real-time status updates
+7. HUMANLOOP APPROVAL SYSTEM
+Critical actions require approval:
+- /deploy → requires ADMIN or DEVELOPER approval
+- Destructive operations → requires approval
+- Approval UI shows: action details, YES/NO/MODIFY buttons
+- Approval state stored in DB
+- Timeout → auto-reject (configurable)
+8. MULTI-USER ROLES
+Role Permissions
+ADMIN Full access, approve deployments, manage users
+DEVELOPER Build, deploy with approval, view all jobs
+VIEWER Read-only, view jobs and logs
+JWT-based authentication. Role-based route guards.
+9. BRAIN CONNECT (PHASE 1 IMPLEMENTATION)
+Layers 1-10 active in Phase 1:
+1. Command History Memory – stores all commands per user
+2. Code Pattern Recognition – tags generated code patterns
+3. User Preference Learning – tracks user build preferences
+4. System State Tracking – tracks all job/system states
+5. HumanLoop Feedback Storage – stores all approvals/rejections
+6. Deployment Target Memory – remembers deploy targets
+7. Error Recovery Tactics – logs errors + recovery actions
+8. Multi-User Role Mapping – maps users to roles/workspaces
+9. Builder Template Library – stores reusable build templates
+10. Real-Time Feedback Loop – live status feedback to user
+10. TACTICS LIBRARY
+Reusable build tactics stored and replayed:
+- User can save a tactic (sequence of commands)
+- Tactic has name, description, steps
+- Tactic can be run with /tactic <name>
+- Tactics visible in sidebar under TACTICS LIB
+11. SYSTEM BUILDER (NORA-BUILDER)
+Builds apps by natural language:
+- User types: "build a todo app with React frontend"
+- NORA generates: file tree, code stubs, config files
+- Output visible live in dashboard
+- Files stored in DB (Phase 1: mock output)
+12. SEED DATA / DEFAULT CREDENTIALS
+Admin login for local testing:
+- Username: admin
+- Password: nora-admin-2024
+- Role: ADMIN
+Developer login:
+- Username: developer
+- Password: nora-dev-2024
+- Role: DEVELOPER
+Viewer login:
+- Username: viewer
+- Password: nora-view-2024
+- Role: VIEWER
+END OF PHASE 1 BLUEPRINT
